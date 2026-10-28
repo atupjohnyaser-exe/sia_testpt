@@ -67,6 +67,8 @@ return [
 
     'timezone' => 'UTC',
 
+    'demo_mode' => env('APP_DEMO_MODE', true),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

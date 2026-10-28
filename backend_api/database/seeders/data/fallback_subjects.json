@@ -1,0 +1,6 @@
+[
+  {"id":201,"firstName":"Iris","lastName":"Morrow","age":29,"height":168,"eyeColor":"green","hair":{"color":"brown"},"image":"","address":{"city":"London"}},
+  {"id":202,"firstName":"Caleb","lastName":"Wren","age":42,"height":181,"eyeColor":"blue","hair":{"color":"black"},"image":"","address":{"city":"Westminster"}},
+  {"id":203,"firstName":"Talia","lastName":"Sloane","age":36,"height":172,"eyeColor":"hazel","hair":{"color":"blond"},"image":"","address":{"city":"Camden"}},
+  {"id":204,"firstName":"Jonah","lastName":"Pike","age":33,"height":176,"eyeColor":"brown","hair":{"color":"auburn"},"image":"","address":{"city":"Southwark"}}
+]
