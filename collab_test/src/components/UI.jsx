@@ -15,7 +15,7 @@ export function PageFooter() { return <footer className="page-footer"><span>RPD 
 export function Modal({ title, eyebrow, onClose, children, wide = false }) {
   const dialog = useRef(null)
   useEffect(() => { dialog.current?.showModal(); return () => dialog.current?.close() }, [])
-  return <dialog ref={dialog} className={`modal ${wide ? 'modal-wide' : ''}`} onClose={onClose} onClick={(event) => { if (event.target === dialog.current) onClose() }}>
+  return <dialog ref={dialog} className={`modal ${wide ? 'modal-wide' : ''}`} onCancel={(event) => { event.preventDefault(); onClose() }} onClick={(event) => { if (event.target === dialog.current) onClose() }}>
     <header className="modal-head"><div><small className="eyebrow">{eyebrow}</small><h2>{title}</h2></div><button className="icon-button" aria-label="Close dialog" onClick={onClose}>×</button></header>
     {children}
   </dialog>
