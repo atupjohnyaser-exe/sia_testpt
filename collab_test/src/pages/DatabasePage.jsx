@@ -83,7 +83,7 @@ function DetailView({ id }) {
   const offenses = useOffenses(id)
   const notes = useNotes(id)
   if (recordQuery.isLoading) return <section className="record-detail"><LoadingRows count={4} /></section>
-  if (recordQuery.isError) return <section className="record-detail"><ErrorState onRetry={() => recordQuery.refetch()} /></section>
+  if (recordQuery.isError) return <section className="record-detail"><ErrorState message={recordQuery.error?.response?.data?.message || `Could not load this record${recordQuery.error?.response?.status ? ` (HTTP ${recordQuery.error.response.status})` : '. Check that the API is running and the record still exists.'}`} onRetry={() => recordQuery.refetch()} /></section>
   if (!record) return <EmptyState title="RECORD UNAVAILABLE" />
   return <section className="record-detail">
     <div className="active-file"><span><small>ACTIVE CASE FILE</small><b>{record.case_id}</b></span><div className="record-actions"><button className="button button-outline" onClick={() => setEditing(true)}>EDIT RECORD</button><button className="button button-danger" disabled={remove.isPending} onClick={async () => { if (window.confirm('Archive this fictional training record?')) { await remove.mutateAsync(id); toast('RECORD ARCHIVED'); window.location.assign('/database') } }}>ARCHIVE</button></div></div>
@@ -109,11 +109,12 @@ function DetailView({ id }) {
 
 export function DatabasePage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
   const create = useCreateSubject()
   return <div className="database-layout">
     <RecordList activeId={id} onCreate={() => setCreating(true)} />
     {id ? <DetailView id={id} /> : <section className="database-empty"><span className="database-mark">RPD</span><small>SECURE RECORDS NETWORK</small><h1>SUBJECT<br />DATABASE</h1><p>Select a subject file from the index to review intelligence or create a new case record.</p><Link className="button button-outline" to="/command">RETURN TO COMMAND CENTER</Link></section>}
-    {creating && <RecordModal onClose={() => setCreating(false)} onSave={(body) => create.mutateAsync(body)} busy={create.isPending} />}
+    {creating && <RecordModal onClose={() => setCreating(false)} onSave={async (body) => { const result = await create.mutateAsync(body); if (result?.data?.id) navigate(`/database/${result.data.id}`); return result }} busy={create.isPending} />}
   </div>
 }

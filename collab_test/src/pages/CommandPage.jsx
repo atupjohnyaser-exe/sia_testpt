@@ -47,6 +47,6 @@ export function CommandPage() {
       </aside>
     </div>
     <div className="training-strip"><span>FICTIONAL TRAINING DATA</span><span>DEMO RECORDS ARE NOT REAL PEOPLE OR OFFICIAL CRIMINAL RECORDS</span></div>
-    {creating && <RecordModal onClose={() => setCreating(false)} onSave={(body) => create.mutateAsync(body)} busy={create.isPending} />}
+    {creating && <RecordModal onClose={() => setCreating(false)} onSave={async (body) => { const result = await create.mutateAsync(body); if (result?.data?.id) navigate(`/database/${result.data.id}`); return result }} busy={create.isPending} />}
   </>
 }
