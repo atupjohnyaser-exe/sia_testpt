@@ -1,6 +1,0 @@
-[
-  {"category":"violent-crime","month":"2025-03","location":{"street":{"name":"South Harbor"}},"outcome_status":{"category":"Under investigation"}},
-  {"category":"burglary","month":"2025-02","location":{"street":{"name":"East Rail"}},"outcome_status":{"category":"Unable to prosecute suspect"}},
-  {"category":"other-theft","month":"2024-12","location":{"street":{"name":"Civic District"}},"outcome_status":{"category":"Investigation complete; no suspect identified"}},
-  {"category":"public-order","month":"2024-10","location":{"street":{"name":"North Precinct"}},"outcome_status":{"category":"Offender given a caution"}}
-]

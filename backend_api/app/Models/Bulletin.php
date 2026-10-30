@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bulletin extends Model
 {
-    protected $fillable = ['body', 'ref', 'published_at', 'is_active'];
-    protected function casts(): array { return ['published_at' => 'datetime', 'is_active' => 'boolean']; }
+    protected $fillable = ['ref', 'body', 'is_active', 'published_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'published_at' => 'datetime',
+        ];
+    }
 }

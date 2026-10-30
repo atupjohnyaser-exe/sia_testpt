@@ -2,85 +2,122 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AuditAction;
+use App\Enums\SubjectStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSubjectRequest;
 use App\Http\Requests\UpdateSubjectRequest;
 use App\Http\Resources\SubjectResource;
-use App\Models\AuditLog;
 use App\Models\Subject;
+use App\Services\AuditLogger;
+use App\Services\SubjectService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubjectController extends Controller
 {
+    public function __construct(private SubjectService $subjects)
+    {
+    }
+
     public function index(Request $request)
     {
-        abort_unless((int) $request->user()->clearance_level >= 3, 403);
-        $subjects = Subject::query()->withCount('offenses');
-        if ($search = trim($request->string('search')->toString())) {
-            $subjects->where(fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('alias', 'like', "%{$search}%")->orWhere('case_id', 'like', "%{$search}%"));
+        $request->validate([
+            'status' => ['nullable', Rule::enum(SubjectStatus::class)],
+            'threat_level' => ['nullable', 'integer', 'between:1,6'],
+            'sort' => ['nullable', Rule::in(['bounty', 'threat', 'name', 'recent'])],
+        ]);
+
+        $query = Subject::query();
+
+        $search = trim((string) $request->query('search', ''));
+
+        if ($search !== '') {
+            $like = '%'.addcslashes($search, '%_\\').'%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('name', 'like', $like)
+                    ->orWhere('alias', 'like', $like)
+                    ->orWhere('case_id', 'like', $like);
+            });
         }
-        if ($status = $request->query('status')) $subjects->where('status', $status);
-        match ($request->query('sort', 'risk')) {
-            'name' => $subjects->orderBy('name'), 'recent' => $subjects->latest(), default => $subjects->orderByDesc('risk_score'),
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        if ($request->filled('threat_level')) {
+            $query->where('threat_level', (int) $request->query('threat_level'));
+        }
+
+        match ($request->query('sort', 'bounty')) {
+            'name' => $query->orderBy('name'),
+            'recent' => $query->latest('id'),
+            'threat' => $query->orderByDesc('threat_level')->orderByDesc('bounty'),
+            default => $query->orderByDesc('bounty')->orderBy('id'),
         };
-        return SubjectResource::collection($subjects->paginate(min(100, max(1, (int) $request->query('per_page', 20))))->withQueryString());
+
+        return SubjectResource::collection($query->paginate($this->perPage($request))->withQueryString());
     }
 
-    public function store(StoreSubjectRequest $request)
+    public function store(StoreSubjectRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $data['case_id'] ??= $this->caseId($data['name']);
-        if (! array_key_exists('risk_override', $data)) $data['risk_override'] = true;
-        $subject = Subject::create($data);
-        AuditLog::create(['user_id' => $request->user()->id, 'subject_id' => $subject->id, 'action' => 'created']);
-        return (new SubjectResource($subject->loadCount('offenses')))->response()->setStatusCode(201);
+        $status = SubjectStatus::from($request->validated('status') ?? SubjectStatus::Wanted->value);
+
+        $subject = $this->subjects->create($request->validated(), $status, $request->user());
+
+        return (new SubjectResource($subject->refresh()))->response()->setStatusCode(201);
     }
 
-    public function show(Request $request, Subject $subject)
+    public function show(Request $request, Subject $subject, AuditLogger $audit): SubjectResource
     {
-        $this->authorize('view', $subject);
-        AuditLog::create(['user_id' => $request->user()->id, 'subject_id' => $subject->id, 'action' => 'viewed']);
-        return new SubjectResource($subject->loadCount('offenses')->load(['advisoryReviewer', 'offenses' => fn ($query) => $query->latest('occurred_on')->limit(3)]));
+        $audit->recordView($subject, $request->user());
+
+        $subject->load([
+            'advisoryReviewer',
+            'infractions' => fn ($query) => $query->with('type')->latest('occurred_on')->latest('id')->limit(5),
+        ]);
+
+        return new SubjectResource($subject);
     }
 
-    public function update(UpdateSubjectRequest $request, Subject $subject)
+    public function update(UpdateSubjectRequest $request, Subject $subject): SubjectResource
     {
-        $this->authorize('update', $subject);
-        $data = $request->validated();
-        if (array_key_exists('risk_score', $data) && ! array_key_exists('risk_override', $data)) $data['risk_override'] = true;
-        $subject->update($data);
-        AuditLog::create(['user_id' => $request->user()->id, 'subject_id' => $subject->id, 'action' => 'updated']);
-        return new SubjectResource($subject->refresh()->loadCount('offenses'));
+        return new SubjectResource($this->subjects->update($subject, $request->validated(), $request->user()));
     }
 
-    public function destroy(Request $request, Subject $subject)
+    /** Soft delete. The record stays in the database and a supervisor can restore it. */
+    public function destroy(Subject $subject): JsonResponse
     {
-        $this->authorize('delete', $subject);
         $subject->delete();
-        AuditLog::create(['user_id' => $request->user()->id, 'subject_id' => $subject->id, 'action' => 'deleted']);
+
         return response()->json(['message' => 'Record archived.']);
     }
 
-    public function restore(Request $request, int $subject)
+    public function restore(Subject $subject): SubjectResource
     {
-        abort_unless((int) $request->user()->clearance_level >= 3, 403);
-        $record = Subject::withTrashed()->findOrFail($subject);
-        $record->restore();
-        AuditLog::create(['user_id' => $request->user()->id, 'subject_id' => $record->id, 'action' => 'updated', 'meta' => ['restored' => true]]);
-        return new SubjectResource($record->loadCount('offenses'));
+        $subject->restore();
+
+        return new SubjectResource($subject);
     }
 
-    public function export(Request $request)
+    /** Streams every record as one JSON array, in chunks, and writes an audit row first. */
+    public function export(Request $request, AuditLogger $audit): StreamedResponse
     {
-        abort_unless((int) $request->user()->clearance_level >= 3, 403);
-        return SubjectResource::collection(Subject::with(['advisoryReviewer', 'offenses', 'notes.user'])->withCount('offenses')->get());
-    }
+        $audit->record(AuditAction::Exported, null, ['scope' => 'subjects']);
 
-    private function caseId(string $name): string
-    {
-        do { $id = 'RP-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(2)); }
-        while (Subject::withTrashed()->where('case_id', $id)->exists());
-        return $id;
+        return response()->streamDownload(function () use ($request) {
+            echo '[';
+            $first = true;
+
+            foreach (Subject::with('advisoryReviewer')->lazyById(200) as $subject) {
+                echo ($first ? '' : ',').json_encode((new SubjectResource($subject))->resolve($request));
+                $first = false;
+            }
+
+            echo ']';
+        }, 'rockport-subjects.json', ['Content-Type' => 'application/json']);
     }
 }

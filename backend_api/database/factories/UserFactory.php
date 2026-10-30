@@ -5,37 +5,29 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
+    protected $model = User::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
             'name' => fake()->name(),
             'badge_id' => fake()->unique()->bothify('RP-####'),
-            'initials' => strtoupper(fake()->bothify('??')),
-            'rank' => 'Officer',
+            'initials' => 'TS',
+            'rank' => 'Detective',
             'clearance_level' => 3,
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'is_active' => true,
+            'password' => Hash::make('password'),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
+    public function clearance(int $level): static
+    {
+        return $this->state(fn () => ['clearance_level' => $level]);
+    }
 }

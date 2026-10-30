@@ -2,41 +2,40 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Clearance;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory;
 
-    protected $fillable = ['name', 'badge_id', 'initials', 'rank', 'clearance_level', 'password'];
+    protected $fillable = ['name', 'badge_id', 'initials', 'rank', 'clearance_level', 'is_active', 'password'];
+
     protected $hidden = ['password', 'remember_token'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'clearance_level' => 'integer',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
 
-    public function auditLogs()
+    public function clearance(): Clearance
     {
-        return $this->hasMany(AuditLog::class);
+        return Clearance::tryFrom((int) $this->clearance_level) ?? Clearance::Clerk;
     }
 
-    public function notes()
+    public function hasClearance(Clearance|int $minimum): bool
     {
-        return $this->hasMany(CaseNote::class);
+        $level = $minimum instanceof Clearance ? $minimum->value : $minimum;
+
+        return (int) $this->clearance_level >= $level;
     }
 }
