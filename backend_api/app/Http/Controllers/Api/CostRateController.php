@@ -14,7 +14,10 @@ class CostRateController extends Controller
 {
     public function index()
     {
-        return CostRateResource::collection(CostRate::orderBy('id')->get());
+        return CostRateResource::collection(CostRate::orderBy('id')->get())->additional([
+            // The manhunt form uses this to show an estimate before saving.
+            'meta' => ['bounty_multiplier' => (float) config('rockport.manhunt_bounty_multiplier')],
+        ]);
     }
 
     /**

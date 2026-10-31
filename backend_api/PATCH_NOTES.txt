@@ -1,0 +1,3 @@
+Copy these files over the same paths in your backend_api folder, replacing the old ones.
+Then run: php artisan test
+No migration and no composer install needed.

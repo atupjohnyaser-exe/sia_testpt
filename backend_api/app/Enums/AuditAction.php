@@ -24,4 +24,5 @@ enum AuditAction: string
     case ManhuntDeleted = 'manhunt_deleted';
     case SightingAdded = 'sighting_added';
     case RatesUpdated = 'rates_updated';
+    case CaseFileGenerated = 'case_file_generated';
 }

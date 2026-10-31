@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CaseFileController;
 use App\Http\Controllers\Api\CostRateController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InfractionController;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 | Clearance levels
 |   1 Records Clerk  read only
 |   2 Officer        add infractions, manhunts, sightings and notes
-|   3 Detective      create and edit records, change status, mark infractions served
+|   3 Detective      create and edit records, change status, mark infractions served, case files
 |   4 Supervisor     archive and restore, export, delete, threat override, cost rates, audit log
 */
 
@@ -70,6 +71,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/subjects', [SubjectController::class, 'store']);
             Route::put('/subjects/{subject}', [SubjectController::class, 'update']);
             Route::post('/subjects/{subject}/status', [SubjectStatusController::class, 'store']);
+            Route::post('/subjects/{subject}/case-file', [CaseFileController::class, 'show']);
             Route::patch('/infractions/{infraction}', [InfractionController::class, 'update']);
         });
 

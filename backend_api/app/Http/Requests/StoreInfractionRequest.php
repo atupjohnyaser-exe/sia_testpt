@@ -16,7 +16,8 @@ class StoreInfractionRequest extends FormRequest
     {
         return [
             'infraction_type_id' => ['required', 'integer', Rule::exists('infraction_types', 'id')->where('is_active', true)],
-            'occurred_on' => ['required', 'date', 'before_or_equal:today'],
+            // Up to tomorrow, so officers in time zones ahead of the server can still enter today's date.
+            'occurred_on' => ['required', 'date', 'before_or_equal:tomorrow'],
             'location' => ['required', 'string', 'max:180'],
             'disposition' => ['nullable', 'string', 'max:180'],
         ];

@@ -121,6 +121,7 @@ Lists are paginated (`?page=`, `?per_page=` up to 100).
 | PUT `/subjects/{id}` | 3 | Profile fields only |
 | POST `/subjects/{id}/status` | 3 | `status`, `reason` |
 | PATCH `/infractions/{id}` | 3 | `served` and/or `fine_paid` |
+| POST `/subjects/{id}/case-file` | 3 | Everything for the printable case file in one response. Audited as `case_file_generated` |
 | DELETE `/subjects/{id}` | 4 | Archive (soft delete) |
 | POST `/subjects/{id}/restore` | 4 | Restore |
 | GET `/subjects/export` | 4 | Streamed JSON of every record, audited |
@@ -163,8 +164,10 @@ tests              auth, clearance, status, bounty and cost, audit, rankings, li
 | Dead and duplicate code, one-line controllers | Services, thin controllers, enums |
 | Welcome page test needed Vite build | No web routes, `/up` health check only |
 
-## Not built yet
+## Frontend
 
-Steps 3 and 4 of the plan: the React screens, then the manhunt log form with a demo
-generator, the heat level display, and the printable PDF case file.
-The API already returns everything those need (threat level label and response text, manhunt creation).
+The React app lives in its own folder (`rockport_ui`). It talks to this API at `/api/v1`.
+Set `FRONTEND_URL` in `.env` if the app does not run on `http://localhost:5173`.
+
+Times are stored in UTC. The app sends timestamps in UTC and shows them in your own time zone.
+Infraction dates may be up to one day ahead of the server date, so officers ahead of UTC can still enter today.
