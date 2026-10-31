@@ -25,6 +25,13 @@ export const endpoints = {
   archiveSubject: (id) => remove(`/subjects/${id}`),
   changeStatus: (id, body) => post(`/subjects/${id}/status`, body),
   threatOverride: (id, body) => put(`/subjects/${id}/threat-override`, body),
+  uploadPhoto: (id, file) => {
+    const form = new FormData()
+    form.append('photo', file)
+
+    return api.post(`/subjects/${id}/photo`, form).then((response) => response.data)
+  },
+  deletePhoto: (id) => remove(`/subjects/${id}/photo`),
   exportSubjects: () => api.get('/subjects/export', { responseType: 'blob' }).then((response) => response.data),
 
   // record screens

@@ -1,3 +1,11 @@
-Copy these files over the same paths in your backend_api folder, replacing the old ones.
-Then run: php artisan test
-No migration and no composer install needed.
+Copy the folders app, routes, tests and database, and README.md, over the same ones in your backend_api folder.
+Choose "Replace the files in the destination".
+
+This patch includes everything from the first patch, so you only need this one.
+
+Then, inside backend_api:
+  php artisan migrate        (adds one column for uploaded portraits, keeps all your data)
+  php artisan optimize:clear
+
+For portrait uploads also check php.ini: upload_max_filesize and post_max_size should be at least 3M,
+and extension=gd should be switched on (remove the ; at the start of that line) so images are cleaned on upload.

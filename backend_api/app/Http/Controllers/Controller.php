@@ -10,6 +10,15 @@ abstract class Controller
 {
     use AuthorizesRequests, ValidatesRequests;
 
+    /** Validation for ?page and ?per_page on every list. */
+    protected function pagingRules(): array
+    {
+        return [
+            'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ];
+    }
+
     /**
      * Page size from ?per_page, kept between 1 and 100.
      */

@@ -15,12 +15,12 @@ class AuditLogController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'user_id' => ['nullable', 'integer'],
-            'subject_id' => ['nullable', 'integer'],
+            'user_id' => ['nullable', 'integer', 'min:1'],
+            'subject_id' => ['nullable', 'integer', 'min:1'],
             'action' => ['nullable', Rule::enum(AuditAction::class)],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date'],
-        ]);
+            'from' => ['nullable', 'date', 'after_or_equal:1970-01-01'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ] + $this->pagingRules());
 
         $query = AuditLog::query()->with(['user:id,name,badge_id', 'subject:id,case_id,name'])->latest('id');
 

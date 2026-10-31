@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/auth'
 import { errorMessage } from '../../lib/errors'
+import { LIMITS, validateLogin } from '../../lib/validation'
 
 export function LoginPage() {
   const { officer, login } = useAuth()
@@ -16,6 +17,15 @@ export function LoginPage() {
   const submit = async (event) => {
     event.preventDefault()
     setError('')
+
+    const problems = validateLogin(badge, key)
+
+    if (Object.keys(problems).length > 0) {
+      setError(Object.values(problems)[0])
+
+      return
+    }
+
     setBusy(true)
 
     try {
@@ -57,19 +67,19 @@ export function LoginPage() {
         <small className="eyebrow">IDENTITY VERIFICATION</small>
         <h2>OFFICER SIGN IN</h2>
         <p>Enter your department credentials to begin a secure session.</p>
-        <form onSubmit={submit}>
+        <form onSubmit={submit} noValidate>
           <label className="field">
             <span>BADGE ID</span>
             <div className="input-prefix">
               <b>ID</b>
-              <input value={badge} onChange={(event) => setBadge(event.target.value)} placeholder="E.G. RP-1047" autoComplete="username" required />
+              <input value={badge} onChange={(event) => setBadge(event.target.value)} placeholder="E.G. RP-1047" autoComplete="username" maxLength={LIMITS.badge} required />
             </div>
           </label>
           <label className="field">
             <span>ACCESS KEY</span>
             <div className="input-prefix">
               <b>••</b>
-              <input type="password" value={key} onChange={(event) => setKey(event.target.value)} placeholder="ENTER SECURE KEY" autoComplete="current-password" required />
+              <input type="password" value={key} onChange={(event) => setKey(event.target.value)} placeholder="ENTER SECURE KEY" autoComplete="current-password" maxLength={LIMITS.key} required />
             </div>
           </label>
           {error && <p className="form-error">{error}</p>}

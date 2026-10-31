@@ -12,6 +12,7 @@ use App\Models\Subject;
 use App\Services\InfractionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class InfractionController extends Controller
 {
@@ -19,9 +20,19 @@ class InfractionController extends Controller
     {
     }
 
+    private function validateListQuery(Request $request): void
+    {
+        $request->validate([
+            'served' => ['nullable', Rule::in(['true', 'false', '1', '0'])],
+            'type' => ['nullable', 'string', 'max:60', 'regex:/^[a-z0-9-]+$/'],
+        ] + $this->pagingRules());
+    }
+
     /** All infractions on one subject. Filter with ?served=true or ?served=false. */
     public function forSubject(Request $request, Subject $subject)
     {
+        $this->validateListQuery($request);
+
         $query = $subject->infractions()->with(['type', 'manhunt:id,code'])->latest('occurred_on')->latest('id');
 
         if ($request->has('served')) {
@@ -34,6 +45,8 @@ class InfractionController extends Controller
     /** All infractions across subjects. Filter with ?type=code and ?served=. */
     public function index(Request $request)
     {
+        $this->validateListQuery($request);
+
         $query = Infraction::query()
             ->with(['subject:id,case_id,name', 'type', 'manhunt:id,code'])
             ->latest('occurred_on')

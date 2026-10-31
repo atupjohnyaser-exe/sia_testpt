@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\Clearance;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 
 class SubjectResource extends JsonResource
 {
@@ -39,7 +40,8 @@ class SubjectResource extends JsonResource
             'eye_color' => $this->eye_color,
             'hair_color' => $this->hair_color,
             'distinguishing_features' => $this->distinguishing_features,
-            'photo_url' => $this->photo_url,
+            'photo_url' => $this->displayPhotoUrl(),
+            'photo_source' => $this->photo_path ? 'upload' : ($this->photo_url ? 'url' : null),
             'officer_advisory' => $canSeeAdvisory ? $this->officer_advisory : 'RESTRICTED',
             'advisory_reviewed_at' => $this->advisory_reviewed_at,
             'advisory_reviewed_by' => $this->whenLoaded('advisoryReviewer', fn () => $this->advisoryReviewer?->name),
@@ -48,5 +50,22 @@ class SubjectResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /**
+     * An uploaded portrait is shown through a signed link that stops working after the session limit.
+     * A pasted outside link is shown as it is.
+     */
+    private function displayPhotoUrl(): ?string
+    {
+        if ($this->photo_path) {
+            return URL::temporarySignedRoute(
+                'subjects.photo',
+                now()->addMinutes((int) config('rockport.token_ttl_minutes')),
+                ['subject' => $this->id]
+            );
+        }
+
+        return $this->photo_url;
     }
 }

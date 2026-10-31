@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\NoteController;
 use App\Http\Controllers\Api\RankingController;
 use App\Http\Controllers\Api\SightingController;
 use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\SubjectPhotoController;
 use App\Http\Controllers\Api\SubjectReportController;
 use App\Http\Controllers\Api\SubjectStatusController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+
+    // Portraits. An <img> tag cannot send a login token, so the link is signed and expires.
+    Route::get('/subjects/{subject}/photo', [SubjectPhotoController::class, 'show'])->middleware('signed')->name('subjects.photo');
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -72,6 +76,8 @@ Route::prefix('v1')->group(function () {
             Route::put('/subjects/{subject}', [SubjectController::class, 'update']);
             Route::post('/subjects/{subject}/status', [SubjectStatusController::class, 'store']);
             Route::post('/subjects/{subject}/case-file', [CaseFileController::class, 'show']);
+            Route::post('/subjects/{subject}/photo', [SubjectPhotoController::class, 'store']);
+            Route::delete('/subjects/{subject}/photo', [SubjectPhotoController::class, 'destroy']);
             Route::patch('/infractions/{infraction}', [InfractionController::class, 'update']);
         });
 

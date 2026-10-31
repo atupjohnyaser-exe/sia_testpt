@@ -10,6 +10,7 @@ use App\Models\Subject;
 use App\Services\ManhuntService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ManhuntController extends Controller
 {
@@ -20,6 +21,11 @@ class ManhuntController extends Controller
     /** ?sort=bounty|recent|length (default bounty). ?top=5 returns just the top five, no paging. */
     public function forSubject(Request $request, Subject $subject)
     {
+        $request->validate([
+            'sort' => ['nullable', Rule::in(['bounty', 'recent', 'length'])],
+            'top' => ['nullable', 'integer', 'between:1,25'],
+        ] + $this->pagingRules());
+
         $query = $subject->manhunts()->withCount('infractions');
 
         match ($request->query('sort', 'bounty')) {
@@ -39,6 +45,8 @@ class ManhuntController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate($this->pagingRules());
+
         return ManhuntResource::collection(
             Manhunt::with('subject:id,case_id,name,alias')
                 ->withCount('infractions')

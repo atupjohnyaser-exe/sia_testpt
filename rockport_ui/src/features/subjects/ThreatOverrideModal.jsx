@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Field, Modal, ModalActions } from '../../components/ui'
 import { useThreatOverride } from '../../hooks/mutations'
 import { fieldErrors } from '../../lib/errors'
+import { LIMITS, validateReason } from '../../lib/validation'
 
 const LEVELS = [
   [1, 'ROUTINE'],
@@ -21,6 +22,17 @@ export function ThreatOverrideModal({ subject, onClose }) {
 
   const submit = async (event) => {
     event.preventDefault()
+
+    if (level !== '') {
+      const problems = validateReason(reason, { min: 5 })
+
+      if (Object.keys(problems).length > 0) {
+        setErrors(problems)
+
+        return
+      }
+    }
+
     setErrors({})
 
     try {
@@ -33,7 +45,7 @@ export function ThreatOverrideModal({ subject, onClose }) {
 
   return (
     <Modal title="THREAT LEVEL OVERRIDE" eyebrow={`${subject.case_id} // SUPERVISOR ACTION`} onClose={onClose}>
-      <form className="record-form" onSubmit={submit}>
+      <form className="record-form" onSubmit={submit} noValidate>
         <Field label="THREAT LEVEL" error={errors.level}>
           <select value={level} onChange={(event) => setLevel(event.target.value)}>
             <option value="">AUTOMATIC (FROM BOUNTY)</option>
@@ -41,8 +53,8 @@ export function ThreatOverrideModal({ subject, onClose }) {
           </select>
         </Field>
         {level !== '' && (
-          <Field label="REASON" error={errors.reason}>
-            <textarea rows="3" value={reason} onChange={(event) => setReason(event.target.value)} required minLength={5} maxLength={500} />
+          <Field label={`REASON (${reason.length}/${LIMITS.reason})`} error={errors.reason}>
+            <textarea rows="3" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={LIMITS.reason} />
           </Field>
         )}
         {errors.form && <p className="form-error">{errors.form}</p>}

@@ -85,6 +85,37 @@ Fine and bounty on an infraction are copied from its type when it is recorded, f
   Audit rows cannot be updated or deleted through the model.
 - Responses send `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 - Nothing secret is in this folder. `.env` is in `.gitignore`.
+- Every input has a limit (see Input limits). Free text is checked for HTML, control characters and
+  hidden direction characters. Names and similar fields use character whitelists.
+- Portrait uploads: JPG, PNG or WebP only (no SVG), up to 2 MB, 100 to 3000 pixels per side, type read
+  from the file contents. The client's file name is never used. When the GD extension is on, the image
+  is decoded and saved again, which removes camera data and anything hidden in the file. Files sit on
+  the private disk and are served through a signed link that expires with the session.
+- Responses also send `X-Frame-Options: DENY`, a locked-down `Content-Security-Policy` and `Permissions-Policy`.
+
+## Input limits
+
+| Field | Rule |
+|---|---|
+| Name | 2 to 120. Letters (any language), spaces, apostrophes, periods, hyphens. No digits |
+| Alias | 2 to 80. Letters, numbers, spaces, quotes, apostrophes, periods, hyphens |
+| Age | Whole number, 1 to 120 |
+| Height | Up to 20. Digits, quotes, spaces and the letters c m f t i n (5'8", 173 cm) |
+| Eye and hair colour | Up to 30. Letters, spaces, slash, hyphen |
+| Location, district | Up to 120 and 100. Plain text |
+| Features, advisory | Up to 500 and 2000. Plain text |
+| Notes, reasons | Notes 3 to 5000. Status and threat reasons 3 or 5 to 300. Plain text |
+| Photo link | http or https, up to 2048 |
+| Infraction date | 1970 up to tomorrow |
+| Manhunt | 1 second to 48 hours. Counts 0 to 5000 (checkpoints 500, K-9 200, helicopters 50). Up to 20 infractions |
+| Cost rate | 0 to 1,000,000, up to 20 rates, no repeated codes |
+| Login | Badge 3 to 20 letters, numbers, hyphens. Key up to 128 |
+| Lists | `page` 1 to 100000, `per_page` 1 to 100, `search` up to 100, sort and filter values checked |
+| Officer passwords (command) | At least 12, with letters and numbers |
+
+"Plain text" means no HTML tags, no control characters and no invisible or direction changing characters.
+
+Uploads need PHP's `upload_max_filesize` and `post_max_size` to be at least 3M. Turn on `extension=gd` in `php.ini` to have images cleaned on upload.
 
 ## Endpoints
 
@@ -121,6 +152,9 @@ Lists are paginated (`?page=`, `?per_page=` up to 100).
 | PUT `/subjects/{id}` | 3 | Profile fields only |
 | POST `/subjects/{id}/status` | 3 | `status`, `reason` |
 | PATCH `/infractions/{id}` | 3 | `served` and/or `fine_paid` |
+| POST `/subjects/{id}/photo` | 3 | Upload a portrait (`photo`, multipart). JPG, PNG or WebP, up to 2 MB |
+| DELETE `/subjects/{id}/photo` | 3 | Remove the portrait and its file |
+| GET `/subjects/{id}/photo` | signed link | Serves the portrait. The link comes from the record and expires |
 | POST `/subjects/{id}/case-file` | 3 | Everything for the printable case file in one response. Audited as `case_file_generated` |
 | DELETE `/subjects/{id}` | 4 | Archive (soft delete) |
 | POST `/subjects/{id}/restore` | 4 | Restore |

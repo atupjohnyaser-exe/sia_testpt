@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\PlainText;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,11 +16,11 @@ class StoreSightingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'district' => ['required', 'string', 'max:120'],
-            'address' => ['nullable', 'string', 'max:180'],
-            'seen_at' => ['required', 'date', 'before_or_equal:now'],
+            'district' => ['required', 'string', 'min:2', 'max:100', new PlainText],
+            'address' => ['nullable', 'string', 'max:150', new PlainText],
+            'seen_at' => ['required', 'date', 'after_or_equal:1970-01-01', 'before_or_equal:now'],
             'source' => ['nullable', Rule::in(['patrol', 'tip', 'camera', 'informant', 'other'])],
-            'notes' => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:1000', new PlainText],
         ];
     }
 }

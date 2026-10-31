@@ -7,6 +7,7 @@ import { useAddNote, useDeleteNote } from '../../hooks/mutations'
 import { useNotes } from '../../hooks/queries'
 import { errorMessage, fieldErrors } from '../../lib/errors'
 import { dateTimeText } from '../../lib/format'
+import { LIMITS, validateNote } from '../../lib/validation'
 
 export function NotesTab() {
   const { subject } = useOutletContext()
@@ -27,6 +28,15 @@ export function NotesTab() {
 
   const submit = async (event) => {
     event.preventDefault()
+
+    const problems = validateNote(body)
+
+    if (Object.keys(problems).length > 0) {
+      setErrors(problems)
+
+      return
+    }
+
     setErrors({})
 
     try {
@@ -52,9 +62,9 @@ export function NotesTab() {
     <>
       {can(2) && (
         <Panel eyebrow="CASE NOTES" title="ADD A NOTE">
-          <form className="record-form" onSubmit={submit}>
-            <Field label="NOTE" error={errors.body}>
-              <textarea rows="3" value={body} onChange={(event) => setBody(event.target.value)} required minLength={3} />
+          <form className="record-form" onSubmit={submit} noValidate>
+            <Field label={`NOTE (${body.length}/${LIMITS.note})`} error={errors.body}>
+              <textarea rows="3" value={body} onChange={(event) => setBody(event.target.value)} maxLength={LIMITS.note} />
             </Field>
             <Field label="WHO CAN READ THIS" error={errors.access_level}>
               <select value={chosen} onChange={(event) => setLevel(event.target.value)}>

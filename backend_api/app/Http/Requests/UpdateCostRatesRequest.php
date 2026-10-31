@@ -14,9 +14,9 @@ class UpdateCostRatesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'rates' => ['required', 'array', 'min:1'],
-            'rates.*.code' => ['required', 'string', 'exists:cost_rates,code'],
-            'rates.*.unit_cost' => ['required', 'integer', 'between:0,10000000'],
+            'rates' => ['required', 'array', 'min:1', 'max:20'],
+            'rates.*.code' => ['required', 'string', 'distinct', 'exists:cost_rates,code'],
+            'rates.*.unit_cost' => ['required', 'integer', 'between:0,1000000'],
         ];
     }
 }

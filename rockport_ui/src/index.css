@@ -543,3 +543,75 @@ td { font-size: 14px; }
   .cf-grid b, .cf-response { color: #111; }
   @page { margin: 14mm; }
 }
+
+/* ===================================================================
+   Form controls: number stepper, selects, date pickers, photo, cursors
+   =================================================================== */
+
+:root { color-scheme: dark; }
+
+/* The browser's grey spinner arrows are replaced by .stepper-buttons below. */
+input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.stepper { position: relative; display: flex; width: 100%; }
+.stepper input { width: 100%; padding-right: 38px; }
+.stepper-buttons { position: absolute; top: 1px; right: 1px; bottom: 1px; display: flex; flex-direction: column; width: 28px; border-left: 1px solid var(--line-bright); }
+.stepper-buttons button { display: grid; flex: 1; place-items: center; min-height: 0; padding: 0; border: 0; background: rgba(142, 187, 39, .06); color: var(--lime); transition: background .12s, color .12s; touch-action: manipulation; user-select: none; }
+.stepper-buttons button + button { border-top: 1px solid var(--line-bright); }
+.stepper-buttons button:hover:not(:disabled) { background: var(--lime); color: #081006; }
+.stepper-buttons button:active:not(:disabled) { background: #d6ff7a; color: #081006; }
+.stepper-buttons button:disabled { color: var(--dim); background: transparent; opacity: .55; }
+.stepper:focus-within input { border-color: var(--lime); }
+
+/* Selects: one themed arrow instead of the browser's. */
+select,
+.field select,
+.list-filters select,
+.filter-select select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23b5f42d' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+}
+select:focus { border-color: var(--lime); }
+
+/* Date pickers: make the calendar icon visible on the dark background. */
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: .85;
+  filter: invert(78%) sepia(62%) saturate(520%) hue-rotate(34deg) brightness(105%);
+}
+input[type='date']::-webkit-calendar-picker-indicator:hover,
+input[type='datetime-local']::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* Cursors: a hand on anything you can press, a text bar where you can type, a stop sign when it is off. */
+button, [role='button'], a, select, summary, label.button, input[type='checkbox'], input[type='radio'], input[type='file'],
+.tabs a, .subject-list-row, .manhunt-row, .priority-row, .shortcut, .category-menu button, .scope-toggle button, .checkbox-grid label,
+.icon-button, .mini-button { cursor: pointer; }
+input[type='text'], input[type='url'], input[type='password'], input[type='search'], input[type='number'], input:not([type]), textarea { cursor: text; }
+button:disabled, select:disabled, input:disabled, textarea:disabled, .button:disabled, .mini-button:disabled { cursor: not-allowed; }
+
+/* Photo field */
+.photo-field { display: flex; gap: 16px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); background: rgba(142, 187, 39, .04); }
+.photo-preview { display: grid; flex: 0 0 96px; place-items: center; width: 96px; height: 120px; overflow: hidden; border: 1px solid var(--line-bright); background: var(--bg); }
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-preview span { color: var(--dim); font: 700 10px var(--mono); }
+.photo-controls { display: flex; flex: 1; flex-direction: column; gap: 8px; min-width: 0; }
+.photo-controls p { margin: 0; color: var(--muted); font: 11px var(--mono); line-height: 1.5; }
+.photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.photo-actions .button { min-height: 32px; padding: 0 12px; font-size: 10px; }
+.file-pick { position: relative; overflow: hidden; }
+.file-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 0; cursor: pointer; }
+.file-pick:focus-within { outline: 2px solid var(--lime); outline-offset: 2px; }
+.photo-note { color: var(--amber); font: 10px var(--mono); }
+.photo-error { color: var(--red); font: normal 11px var(--mono); }
+.photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+
+@media (max-width: 700px) {
+  .photo-field { flex-direction: column; }
+}

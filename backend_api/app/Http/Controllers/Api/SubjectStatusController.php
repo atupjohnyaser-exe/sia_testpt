@@ -19,6 +19,8 @@ class SubjectStatusController extends Controller
 {
     public function index(Request $request, Subject $subject)
     {
+        $request->validate($this->pagingRules());
+
         return StatusChangeResource::collection(
             $subject->statusChanges()->with('changer:id,name,badge_id')->latest('id')->paginate($this->perPage($request))
         );

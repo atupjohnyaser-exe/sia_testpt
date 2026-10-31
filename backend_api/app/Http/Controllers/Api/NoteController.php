@@ -14,6 +14,8 @@ class NoteController extends Controller
 {
     public function index(Request $request, Subject $subject)
     {
+        $request->validate($this->pagingRules());
+
         return NoteResource::collection(
             $subject->notes()->with('author:id,name,badge_id,initials')->latest('id')->paginate($this->perPage($request, 30))
         );

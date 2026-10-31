@@ -27,10 +27,16 @@ class CreateOfficer extends Command
             return self::FAILURE;
         }
 
-        $password = $this->option('password') ?: $this->secret('Password (min 10 characters)');
+        $password = (string) ($this->option('password') ?: $this->secret('Password (min 12 characters, with letters and numbers)'));
 
-        if (strlen((string) $password) < 10) {
-            $this->error('The password must be at least 10 characters.');
+        if (strlen($password) < 12 || ! preg_match('/[A-Za-z]/', $password) || ! preg_match('/\d/', $password)) {
+            $this->error('The password must be at least 12 characters and contain letters and numbers.');
+
+            return self::FAILURE;
+        }
+
+        if (! preg_match(\App\Support\Patterns::BADGE, strtoupper(trim($this->argument('badge'))))) {
+            $this->error('A badge ID is 3 to 20 letters, numbers or hyphens.');
 
             return self::FAILURE;
         }

@@ -39,6 +39,9 @@ export const useArchiveSubject = () => useAction(endpoints.archiveSubject, 'RECO
 export const useChangeStatus = (id) => useAction((body) => endpoints.changeStatus(id, body), 'STATUS UPDATED', subjectKeys(id))
 export const useThreatOverride = (id) => useAction((body) => endpoints.threatOverride(id, body), 'THREAT LEVEL UPDATED', subjectKeys(id))
 
+export const useUploadPhoto = () => useAction(({ id, file }) => endpoints.uploadPhoto(id, file), 'PHOTO SAVED', [['subject'], ['subjects']])
+export const useDeletePhoto = () => useAction(endpoints.deletePhoto, 'PHOTO REMOVED', [['subject'], ['subjects']])
+
 export const useAddInfraction = (id) => useAction((body) => endpoints.addInfraction(id, body), 'INFRACTION RECORDED', subjectKeys(id))
 export const useUpdateInfraction = (subjectId) =>
   useAction(({ id, body }) => endpoints.updateInfraction(id, body), 'INFRACTION UPDATED', subjectKeys(subjectId))

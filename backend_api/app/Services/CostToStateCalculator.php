@@ -21,6 +21,18 @@ class CostToStateCalculator
         'insurance_claims',
     ];
 
+    /** The most one manhunt may record for each. Stops typing errors and abuse. */
+    public const QUANTITY_LIMITS = [
+        'officers_involved' => 5000,
+        'officers_injured' => 5000,
+        'units_stood_down' => 5000,
+        'checkpoints' => 500,
+        'k9_units' => 200,
+        'helicopters' => 50,
+        'property_damage_incidents' => 5000,
+        'insurance_claims' => 5000,
+    ];
+
     /**
      * @param  array<string,int>  $quantities  keyed by rate code
      * @return array{lines: array<int,array<string,mixed>>, total: int}

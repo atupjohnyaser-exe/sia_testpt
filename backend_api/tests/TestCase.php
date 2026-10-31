@@ -46,4 +46,18 @@ abstract class TestCase extends BaseTestCase
             'district' => 'Civic District',
         ], $overrides);
     }
+
+    /**
+     * A real PNG built by hand, so the upload tests do not need the GD extension.
+     */
+    protected function pngBytes(int $width = 120, int $height = 120): string
+    {
+        $row = "\x00".str_repeat("\x20\x80\x40", $width);
+        $chunk = fn (string $type, string $data) => pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
+
+        return "\x89PNG\r\n\x1a\n"
+            .$chunk('IHDR', pack('NNCCCCC', $width, $height, 8, 2, 0, 0, 0))
+            .$chunk('IDAT', gzcompress(str_repeat($row, $height)))
+            .$chunk('IEND', '');
+    }
 }

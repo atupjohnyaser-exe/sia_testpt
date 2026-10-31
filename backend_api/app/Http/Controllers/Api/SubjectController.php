@@ -28,7 +28,8 @@ class SubjectController extends Controller
             'status' => ['nullable', Rule::enum(SubjectStatus::class)],
             'threat_level' => ['nullable', 'integer', 'between:1,6'],
             'sort' => ['nullable', Rule::in(['bounty', 'threat', 'name', 'recent'])],
-        ]);
+            'search' => ['nullable', 'string', 'max:100'],
+        ] + $this->pagingRules());
 
         $query = Subject::query();
 
@@ -113,7 +114,14 @@ class SubjectController extends Controller
             $first = true;
 
             foreach (Subject::with('advisoryReviewer')->lazyById(200) as $subject) {
-                echo ($first ? '' : ',').json_encode((new SubjectResource($subject))->resolve($request));
+                $row = (new SubjectResource($subject))->resolve($request);
+
+                // A signed image link would keep working after the export is saved, so leave it out.
+                if (($row['photo_source'] ?? null) === 'upload') {
+                    $row['photo_url'] = null;
+                }
+
+                echo ($first ? '' : ',').json_encode($row);
                 $first = false;
             }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\PlainText;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ThreatOverrideRequest extends FormRequest
@@ -16,7 +17,7 @@ class ThreatOverrideRequest extends FormRequest
     {
         return [
             'level' => ['present', 'nullable', 'integer', 'between:1,6'],
-            'reason' => ['required_with:level', 'nullable', 'string', 'min:5', 'max:500'],
+            'reason' => ['required_with:level', 'nullable', 'string', 'min:5', 'max:300', new PlainText],
         ];
     }
 }

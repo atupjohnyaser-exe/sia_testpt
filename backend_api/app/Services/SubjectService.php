@@ -12,6 +12,10 @@ use Illuminate\Support\Str;
 
 class SubjectService
 {
+    public function __construct(private SubjectPhotoService $photos)
+    {
+    }
+
     public function create(array $data, SubjectStatus $status, User $by): Subject
     {
         return DB::transaction(function () use ($data, $status, $by) {
@@ -43,6 +47,11 @@ class SubjectService
     public function update(Subject $subject, array $data, User $by): Subject
     {
         $subject->fill($data);
+
+        // Pasting an outside link replaces an uploaded portrait.
+        if (! empty($data['photo_url']) && $subject->photo_path) {
+            $this->photos->forget($subject);
+        }
 
         if ($subject->isDirty('officer_advisory') && $subject->officer_advisory !== null) {
             $subject->advisory_reviewed_by = $by->id;

@@ -19,6 +19,7 @@ export function SubjectLayout() {
   const query = useSubject(id)
   const archive = useArchiveSubject()
   const [modal, setModal] = useState(null)
+  const [brokenPhoto, setBrokenPhoto] = useState(null)
 
   if (query.isLoading) return <LoadingRows count={5} />
 
@@ -56,7 +57,11 @@ export function SubjectLayout() {
 
       <section className="subject-profile">
         <div className="photo-placeholder">
-          {subject.photo_url ? <img src={subject.photo_url} alt={`Portrait of ${subject.name}`} /> : <span>NO PHOTO</span>}
+          {subject.photo_url && subject.photo_url !== brokenPhoto ? (
+            <img src={subject.photo_url} alt={`Portrait of ${subject.name}`} onError={() => setBrokenPhoto(subject.photo_url)} />
+          ) : (
+            <span>NO PHOTO</span>
+          )}
           <small>FICTIONAL</small>
         </div>
         <div className="profile-copy">
