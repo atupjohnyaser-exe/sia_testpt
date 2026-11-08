@@ -20,6 +20,6 @@ final class Patterns
     /** Heights like 5'8", 5 ft 8 in, 173 cm. */
     public const HEIGHT = "/^[0-9'\"’”′″. cmftin-]{1,20}$/iu";
 
-    /** Badge ids like RP-1047. */
+    /** Badge ids like BPD-1047. */
     public const BADGE = '/^[A-Za-z0-9-]{3,20}$/';
 }

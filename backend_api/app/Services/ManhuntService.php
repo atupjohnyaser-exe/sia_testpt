@@ -44,7 +44,7 @@ class ManhuntService
             }
 
             $cost = $this->costs->breakdown($quantities);
-            $bounty = (int) round($cost['total'] * (float) config('rockport.manhunt_bounty_multiplier'));
+            $bounty = (int) round($cost['total'] * (float) config('bpd.manhunt_bounty_multiplier'));
             $outcome = $data['outcome'] instanceof ManhuntOutcome ? $data['outcome'] : ManhuntOutcome::from($data['outcome']);
 
             $manhunt = Manhunt::create($quantities + [

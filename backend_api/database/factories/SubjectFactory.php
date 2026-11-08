@@ -17,7 +17,7 @@ class SubjectFactory extends Factory
     public function definition(): array
     {
         return [
-            'case_id' => 'RP-'.fake()->unique()->numerify('####').'-'.Str::upper(Str::random(2)),
+            'case_id' => 'BPD-'.fake()->unique()->numerify('####').'-'.Str::upper(Str::random(2)),
             'name' => fake()->name(),
             'alias' => fake()->word(),
             'age' => fake()->numberBetween(18, 65),

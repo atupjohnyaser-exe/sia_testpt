@@ -38,7 +38,7 @@ class AuditLogger
             ->where('user_id', $user->id)
             ->where('subject_id', $subject->id)
             ->where('action', AuditAction::Viewed->value)
-            ->where('created_at', '>=', now()->subMinutes((int) config('rockport.view_log_minutes')))
+            ->where('created_at', '>=', now()->subMinutes((int) config('bpd.view_log_minutes')))
             ->exists();
 
         if (! $alreadyLogged) {

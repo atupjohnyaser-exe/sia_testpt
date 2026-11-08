@@ -15,6 +15,7 @@ class OfficerResource extends JsonResource
             'badge_id' => $this->badge_id,
             'initials' => $this->initials,
             'rank' => $this->rank,
+            'station' => $this->station,
             'clearance_level' => $this->clearance_level,
             'clearance_label' => $this->clearance()->label(),
         ];

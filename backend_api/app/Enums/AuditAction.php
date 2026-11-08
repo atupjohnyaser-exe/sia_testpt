@@ -25,4 +25,17 @@ enum AuditAction: string
     case SightingAdded = 'sighting_added';
     case RatesUpdated = 'rates_updated';
     case CaseFileGenerated = 'case_file_generated';
+    case AccessDenied = 'access_denied';
+    case AccessRequested = 'access_requested';
+    case AccessApproved = 'access_approved';
+    case AccessRejected = 'access_rejected';
+    case PersonnelCreated = 'personnel_created';
+    case PersonnelUpdated = 'personnel_updated';
+    case PasswordIssued = 'password_issued';
+    case PersonnelDeactivated = 'personnel_deactivated';
+    case PersonnelActivated = 'personnel_activated';
+    case ReportFiled = 'report_filed';
+    case ReportUpdated = 'report_updated';
+    case ReportReviewed = 'report_reviewed';
+    case ReportDeleted = 'report_deleted';
 }

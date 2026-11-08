@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { NumberInput } from '../../components/NumberInput'
 import { Field, Modal, ModalActions } from '../../components/ui'
-import { useCostRates, useInfractionTypes } from '../../hooks/queries'
+import { useCostRates, useInfractionTypes, useMunicipalities } from '../../hooks/queries'
 import { useLogManhunt } from '../../hooks/mutations'
-import { DISTRICTS } from '../../lib/districts'
 import { fieldErrors } from '../../lib/errors'
 import { localInputValue, num } from '../../lib/format'
 import { simulateManhunt } from '../../lib/simulate'
@@ -16,7 +15,7 @@ const COUNTS = [
   ['checkpoints', 'CHECKPOINTS'],
   ['k9_units', 'K-9 UNITS'],
   ['helicopters', 'HELICOPTERS'],
-  ['property_damage_incidents', 'PROPERTY DAMAGE INCIDENTS'],
+  ['property_damage_incidents', 'PROPERTY DAMAGE'],
   ['insurance_claims', 'INSURANCE CLAIMS'],
 ]
 
@@ -26,6 +25,8 @@ export function LogManhuntModal({ subject, onClose, onLogged }) {
   const log = useLogManhunt(subject.id)
   const rates = useCostRates()
   const types = useInfractionTypes()
+  const municipalities = useMunicipalities()
+  const towns = (municipalities.data?.data ?? []).map((place) => place.name)
   const [now] = useState(() => localInputValue())
   const [form, setForm] = useState(() => ({ started_at: localInputValue(new Date(Date.now() - 3600000)), minutes: 20, seconds: 0, outcome: 'EVADED', district: '', notes: '' }))
   const [counts, setCounts] = useState(emptyCounts)
@@ -42,7 +43,7 @@ export function LogManhuntModal({ subject, onClose, onLogged }) {
   const estimate = (rates.data?.data ?? []).reduce((sum, rate) => sum + (Number(counts[rate.code]) || 0) * rate.unit_cost, 0)
 
   const fillDemoNumbers = () => {
-    const made = simulateManhunt(DISTRICTS, types.data?.data ?? [])
+    const made = simulateManhunt(towns, types.data?.data ?? [])
 
     setForm((current) => ({ ...current, minutes: made.minutes, seconds: made.seconds, outcome: made.outcome, district: made.district }))
     setCounts(made.counts)
@@ -93,9 +94,11 @@ export function LogManhuntModal({ subject, onClose, onLogged }) {
           <Field label="STARTED" error={errors.started_at}>
             <input type="datetime-local" value={form.started_at} min="1970-01-01T00:00" max={now} onChange={set('started_at')} />
           </Field>
-          <Field label="DISTRICT" error={errors.district}>
-            <input list="manhunt-districts" value={form.district} onChange={set('district')} maxLength={LIMITS.district} />
-            <datalist id="manhunt-districts">{DISTRICTS.map((district) => <option key={district} value={district} />)}</datalist>
+          <Field label="MUNICIPALITY" error={errors.district}>
+            <select value={form.district} onChange={set('district')}>
+              <option value="">{municipalities.isLoading ? 'LOADING PLACES…' : 'SELECT A MUNICIPALITY'}</option>
+              {towns.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
           </Field>
           <Field label="LENGTH (MINUTES)" error={errors.duration_seconds}>
             <NumberInput value={form.minutes} onChange={setNumber('minutes')} min={0} max={Math.floor(MAX_DURATION_SECONDS / 60)} ariaLabel="Minutes" />

@@ -43,7 +43,7 @@ class AuditTest extends TestCase
     public function test_archiving_and_restoring_are_audited_by_the_observer(): void
     {
         $subject = Subject::factory()->create();
-        $this->actingAsLevel(4);
+        $this->actingAsLevel(5);
 
         $this->deleteJson("/api/v1/subjects/{$subject->id}")->assertOk();
         $this->postJson("/api/v1/subjects/{$subject->id}/restore")->assertOk();

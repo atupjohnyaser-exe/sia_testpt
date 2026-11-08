@@ -8,6 +8,8 @@ const ACTIONS = [
   'login', 'login_failed', 'logout', 'viewed', 'created', 'updated', 'archived', 'restored', 'exported',
   'status_changed', 'threat_overridden', 'note_added', 'note_deleted', 'infraction_added', 'infraction_served',
   'infraction_deleted', 'manhunt_logged', 'manhunt_deleted', 'sighting_added', 'rates_updated', 'case_file_generated',
+  'access_denied', 'access_requested', 'access_approved', 'access_rejected', 'personnel_created', 'personnel_updated',
+  'password_issued', 'personnel_deactivated', 'personnel_activated', 'report_filed', 'report_updated', 'report_reviewed', 'report_deleted',
 ]
 
 // Short readable detail for each row. Never shows free text from notes.
@@ -15,6 +17,10 @@ function detail(log) {
   const meta = log.meta ?? {}
 
   if (log.action === 'login_failed') return `BADGE ${meta.badge_id ?? '?'}`
+  if (log.action === 'access_denied') return `${meta.method} ${meta.path} NEEDED LEVEL ${meta.required}, HAD ${meta.level}`
+  if (log.action.startsWith('access_')) return [meta.reference, meta.badge_id, meta.level ? `LEVEL ${meta.level}` : null].filter(Boolean).join(' // ')
+  if (log.action.startsWith('personnel_') || log.action === 'password_issued') return meta.badge_id ?? ''
+  if (log.action.startsWith('report_')) return [meta.reference, meta.municipality].filter(Boolean).join(' // ')
   if (log.action === 'status_changed') return `${label(meta.from)} → ${label(meta.to)}: ${meta.reason ?? ''}`
   if (log.action === 'threat_overridden') return `LEVEL ${meta.level ?? 'AUTO'}: ${meta.reason ?? ''}`
   if (meta.manhunt) return meta.manhunt
@@ -42,7 +48,7 @@ export function AuditPage() {
   return (
     <div className="content-page">
       <PageHeading eyebrow="SUPERVISOR ONLY // READ ONLY" title="AUDIT LOG" action={<span className="online-indicator">MONITORING</span>}>
-        Every sign in, failed attempt, export, change and case file is recorded here. Entries cannot be edited or deleted.
+        Every sign in, refused request, access decision, report, export, change and case file is recorded here. Entries cannot be edited or deleted.
       </PageHeading>
 
       <Panel

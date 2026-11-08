@@ -1,14 +1,16 @@
 import { useState } from 'react'
+import { PlacePicker } from '../../components/PlacePicker'
 import { Field, Modal, ModalActions } from '../../components/ui'
 import { useAddSighting } from '../../hooks/mutations'
-import { DISTRICTS } from '../../lib/districts'
 import { fieldErrors } from '../../lib/errors'
 import { localInputValue } from '../../lib/format'
+import { composeAddress, splitLocation } from '../../lib/location'
 import { LIMITS, validateSightingForm } from '../../lib/validation'
 
 export function SightingModal({ subject, onClose }) {
   const add = useAddSighting(subject.id)
-  const [form, setForm] = useState(() => ({ district: '', address: '', seen_at: localInputValue(), source: 'patrol', notes: '' }))
+  const [form, setForm] = useState(() => ({ street: '', seen_at: localInputValue(), source: 'patrol', notes: '' }))
+  const [place, setPlace] = useState(() => splitLocation(subject.last_known_location))
   const [now] = useState(() => localInputValue())
   const [errors, setErrors] = useState({})
 
@@ -17,10 +19,12 @@ export function SightingModal({ subject, onClose }) {
   const submit = async (event) => {
     event.preventDefault()
 
-    const problems = validateSightingForm(form)
+    // The municipality is stored as the district. The barangay and street make up the address.
+    const values = { ...form, district: place.municipality, address: composeAddress(form.street, place.barangay) }
+    const problems = validateSightingForm(values)
 
     if (Object.keys(problems).length > 0) {
-      setErrors(problems)
+      setErrors({ ...problems, municipality: problems.district })
 
       return
     }
@@ -29,7 +33,13 @@ export function SightingModal({ subject, onClose }) {
 
     try {
       // Sent as a UTC timestamp so the server never reads your local time as its own.
-      await add.mutateAsync({ ...form, seen_at: new Date(form.seen_at).toISOString() })
+      await add.mutateAsync({
+        district: values.district,
+        address: values.address,
+        seen_at: new Date(form.seen_at).toISOString(),
+        source: form.source,
+        notes: form.notes,
+      })
       onClose()
     } catch (error) {
       setErrors(fieldErrors(error))
@@ -40,20 +50,17 @@ export function SightingModal({ subject, onClose }) {
     <Modal title="LOG SIGHTING" eyebrow={`${subject.case_id} // ${subject.name.toUpperCase()}`} onClose={onClose}>
       <form className="record-form" onSubmit={submit} noValidate>
         <div className="form-grid">
-          <Field label="DISTRICT" error={errors.district}>
-            <input list="district-options" value={form.district} onChange={set('district')} maxLength={LIMITS.district} />
-            <datalist id="district-options">{DISTRICTS.map((district) => <option key={district} value={district} />)}</datalist>
-          </Field>
-          <Field label="ADDRESS (OPTIONAL)" error={errors.address}>
-            <input value={form.address} onChange={set('address')} maxLength={LIMITS.address} />
-          </Field>
-          <Field label="SEEN AT" error={errors.seen_at}>
-            <input type="datetime-local" value={form.seen_at} min="1970-01-01T00:00" max={now} onChange={set('seen_at')} />
+          <PlacePicker value={place} onChange={setPlace} errors={errors} municipalityLabel="MUNICIPALITY" />
+          <Field label="STREET OR LANDMARK (OPTIONAL)" error={errors.address}>
+            <input value={form.street} onChange={set('street')} maxLength={LIMITS.street} />
           </Field>
           <Field label="SOURCE" error={errors.source}>
             <select value={form.source} onChange={set('source')}>
               {['patrol', 'tip', 'camera', 'informant', 'other'].map((source) => <option key={source} value={source}>{source.toUpperCase()}</option>)}
             </select>
+          </Field>
+          <Field label="SEEN AT" error={errors.seen_at}>
+            <input type="datetime-local" value={form.seen_at} min="1970-01-01T00:00" max={now} onChange={set('seen_at')} />
           </Field>
         </div>
         <Field label="NOTES (OPTIONAL)" error={errors.notes}>

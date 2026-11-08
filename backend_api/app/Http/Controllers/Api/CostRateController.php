@@ -16,7 +16,7 @@ class CostRateController extends Controller
     {
         return CostRateResource::collection(CostRate::orderBy('id')->get())->additional([
             // The manhunt form uses this to show an estimate before saving.
-            'meta' => ['bounty_multiplier' => (float) config('rockport.manhunt_bounty_multiplier')],
+            'meta' => ['bounty_multiplier' => (float) config('bpd.manhunt_bounty_multiplier')],
         ]);
     }
 

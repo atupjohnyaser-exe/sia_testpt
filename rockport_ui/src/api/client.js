@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const TOKEN_KEY = 'rpd.sanctum.token'
+const TOKEN_KEY = 'bpd.sanctum.token'
 
 function readToken() {
   try {
@@ -39,12 +39,18 @@ api.interceptors.request.use((config) => {
 
 // A 401 while we hold a token means it expired or was revoked.
 // AuthProvider listens for this and sends the officer back to the login screen.
+// A 403 about clearance is announced the same way, for the warning banner.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && tokenStore.get()) {
       tokenStore.set(null)
-      window.dispatchEvent(new Event('rpd:unauthorized'))
+      window.dispatchEvent(new Event('bpd:unauthorized'))
+    }
+
+    // The server says exactly which level is missing. The app turns that into a warning.
+    if (error.response?.status === 403 && error.response.data?.code === 'clearance_required') {
+      window.dispatchEvent(new CustomEvent('bpd:forbidden', { detail: error.response.data }))
     }
     return Promise.reject(error)
   },

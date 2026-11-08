@@ -39,6 +39,23 @@ export const useArchiveSubject = () => useAction(endpoints.archiveSubject, 'RECO
 export const useChangeStatus = (id) => useAction((body) => endpoints.changeStatus(id, body), 'STATUS UPDATED', subjectKeys(id))
 export const useThreatOverride = (id) => useAction((body) => endpoints.threatOverride(id, body), 'THREAT LEVEL UPDATED', subjectKeys(id))
 
+// Field reports
+const reportKeys = [['reports'], ['stats']]
+export const useFileReport = () => useAction(endpoints.fileReport, 'REPORT FILED', reportKeys)
+export const useUpdateReport = () => useAction(({ id, body }) => endpoints.updateReport(id, body), 'REPORT SAVED', reportKeys)
+export const useReviewReport = () => useAction(endpoints.reviewReport, 'REPORT MARKED REVIEWED', reportKeys)
+export const useDeleteReport = () => useAction(endpoints.deleteReport, 'REPORT DELETED', reportKeys)
+
+// Chief admin
+const adminKeys = [['admin-summary'], ['access-requests'], ['personnel'], ['archived']]
+export const useApproveRequest = () => useAction(({ id, body }) => endpoints.approveRequest(id, body), '', adminKeys)
+export const useRejectRequest = () => useAction(({ id, body }) => endpoints.rejectRequest(id, body), 'APPLICATION REJECTED', adminKeys)
+export const useCreatePersonnel = () => useAction(endpoints.createPersonnel, '', adminKeys)
+export const useUpdatePersonnel = () => useAction(({ id, body }) => endpoints.updatePersonnel(id, body), 'PERSONNEL SAVED', adminKeys)
+export const useIssuePassword = () => useAction(({ id, body }) => endpoints.issuePassword(id, body), '', adminKeys)
+export const useSetPersonnelActive = () => useAction(({ id, active }) => endpoints.setPersonnelActive(id, active), 'ACCOUNT UPDATED', adminKeys)
+export const useRestoreSubject = () => useAction(endpoints.restoreSubject, 'RECORD RESTORED', [...adminKeys, ['subjects'], ['stats'], ['priority']])
+
 export const useUploadPhoto = () => useAction(({ id, file }) => endpoints.uploadPhoto(id, file), 'PHOTO SAVED', [['subject'], ['subjects']])
 export const useDeletePhoto = () => useAction(endpoints.deletePhoto, 'PHOTO REMOVED', [['subject'], ['subjects']])
 

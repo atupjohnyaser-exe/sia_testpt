@@ -126,6 +126,6 @@ class SubjectController extends Controller
             }
 
             echo ']';
-        }, 'rockport-subjects.json', ['Content-Type' => 'application/json']);
+        }, 'bpd-subjects.json', ['Content-Type' => 'application/json']);
     }
 }

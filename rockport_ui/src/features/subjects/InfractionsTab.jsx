@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { GuardedButton } from '../../components/GuardedButton'
 import { EmptyState, Pagination, Panel, QueryState, StatusTag } from '../../components/ui'
 import { useAuth } from '../../context/auth'
 import { useToast } from '../../context/toast'
@@ -88,7 +89,7 @@ export function InfractionsTab() {
           <div className="table-scroll">
             <table className="data-table">
               <thead>
-                <tr><th>DATE</th><th>INFRACTION</th><th>LOCATION</th><th className="num">BOUNTY</th><th className="num">FINE</th><th>STATE</th>{can(3) && <th>ACTIONS</th>}</tr>
+                <tr><th>DATE</th><th>INFRACTION</th><th>LOCATION</th><th className="num">BOUNTY</th><th className="num">FINE</th><th>STATE</th><th>ACTIONS</th></tr>
               </thead>
               <tbody>
                 {list.data?.data.map((infraction) => (
@@ -99,15 +100,13 @@ export function InfractionsTab() {
                     <td className="num">{num(infraction.bounty_value)}</td>
                     <td className="num">{num(infraction.fine_amount)}{infraction.fine_paid && <span className="subline">PAID</span>}</td>
                     <td><span className={`status-tag status-${infraction.served ? 'cleared' : 'wanted'}`}>{infraction.served ? 'SERVED' : 'UNSERVED'}</span></td>
-                    {can(3) && (
-                      <td>
-                        <div className="row-actions">
-                          <button className="mini-button" disabled={update.isPending} onClick={() => change(infraction, { served: !infraction.served })}>{infraction.served ? 'UNSERVE' : 'MARK SERVED'}</button>
-                          <button className="mini-button" disabled={update.isPending} onClick={() => change(infraction, { fine_paid: !infraction.fine_paid })}>{infraction.fine_paid ? 'UNPAY FINE' : 'FINE PAID'}</button>
-                          {can(4) && <button className="mini-button danger" onClick={() => removeInfraction(infraction)}>REMOVE</button>}
-                        </div>
-                      </td>
-                    )}
+                    <td className="col-action">
+                      <div className="row-actions">
+                        <GuardedButton level={3} action="Marking an infraction served" className="mini-button" disabled={update.isPending} onClick={() => change(infraction, { served: !infraction.served })}>{infraction.served ? 'UNSERVE' : 'MARK SERVED'}</GuardedButton>
+                        <GuardedButton level={3} action="Recording a fine as paid" className="mini-button" disabled={update.isPending} onClick={() => change(infraction, { fine_paid: !infraction.fine_paid })}>{infraction.fine_paid ? 'UNPAY FINE' : 'FINE PAID'}</GuardedButton>
+                        <GuardedButton level={5} action="Removing an infraction from the crime history" className="mini-button danger" onClick={() => removeInfraction(infraction)}>REMOVE</GuardedButton>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

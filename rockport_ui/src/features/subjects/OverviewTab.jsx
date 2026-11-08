@@ -1,7 +1,7 @@
 import { Link, useOutletContext } from 'react-router-dom'
+import { GuardedButton } from '../../components/GuardedButton'
 import { Panel, QueryState } from '../../components/ui'
 import { ThreatMeter } from '../../components/ThreatMeter'
-import { useAuth } from '../../context/auth'
 import { useRapSheet } from '../../hooks/queries'
 import { dateText, num } from '../../lib/format'
 
@@ -16,7 +16,6 @@ function Figure({ title, value, tone = '' }) {
 
 export function OverviewTab() {
   const { subject, openThreatOverride } = useOutletContext()
-  const { can } = useAuth()
   const rap = useRapSheet(subject.id)
   const sheet = rap.data?.data
 
@@ -43,7 +42,7 @@ export function OverviewTab() {
 
       <Panel eyebrow="THREAT ASSESSMENT" title="HEAT LEVEL" className="threat-panel">
         <ThreatMeter threat={subject.threat} />
-        {can(4) && <button className="button button-outline override-button" onClick={openThreatOverride}>OVERRIDE LEVEL</button>}
+        <GuardedButton level={4} action="Overriding a threat level" className="button button-outline override-button" onClick={openThreatOverride}>OVERRIDE LEVEL</GuardedButton>
       </Panel>
 
       <section className="advisory">

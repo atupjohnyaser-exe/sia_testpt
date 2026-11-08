@@ -1,9 +1,30 @@
 import { useQuery } from '@tanstack/react-query'
 import { endpoints } from '../api/endpoints'
 
+// Places
+export const useMunicipalities = () => useQuery({ queryKey: ['municipalities'], queryFn: endpoints.municipalities, staleTime: 3600000 })
+export const useBarangays = (id) => useQuery({ queryKey: ['barangays', id], queryFn: () => endpoints.barangays(id), enabled: Boolean(id), staleTime: 3600000 })
+export const useAccessOptions = () => useQuery({ queryKey: ['access-options'], queryFn: endpoints.accessOptions, staleTime: 3600000 })
+
+// Reports
+export const useReports = (params) =>
+  useQuery({ queryKey: ['reports', params], queryFn: () => endpoints.reports(params), placeholderData: (previous) => previous })
+
+// Chief admin
+export const useAdminSummary = () => useQuery({ queryKey: ['admin-summary'], queryFn: endpoints.adminSummary })
+export const useAccessRequests = (params) =>
+  useQuery({ queryKey: ['access-requests', params], queryFn: () => endpoints.accessRequests(params), placeholderData: (previous) => previous })
+export const usePersonnel = (params) =>
+  useQuery({ queryKey: ['personnel', params], queryFn: () => endpoints.personnel(params), placeholderData: (previous) => previous })
+export const useArchivedSubjects = (params) =>
+  useQuery({ queryKey: ['archived', params], queryFn: () => endpoints.archivedSubjects(params), placeholderData: (previous) => previous })
+
+// Charts
+export const useAnalytics = (id) => useQuery({ queryKey: ['analytics', id], queryFn: () => endpoints.analytics(id) })
+
 // Dashboard
 export const useStats = () => useQuery({ queryKey: ['stats'], queryFn: endpoints.stats, refetchInterval: 30000 })
-export const usePriority = () => useQuery({ queryKey: ['priority'], queryFn: endpoints.priority })
+export const usePriority = (enabled = true) => useQuery({ queryKey: ['priority'], queryFn: endpoints.priority, enabled })
 export const useBulletin = () => useQuery({ queryKey: ['bulletin'], queryFn: endpoints.bulletin, refetchInterval: 30000 })
 
 // Only reports "offline" for network failures. A 401 or 403 is handled elsewhere.

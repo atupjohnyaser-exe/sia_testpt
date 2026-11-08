@@ -66,7 +66,7 @@ class SubjectService
     private function newCaseId(): string
     {
         do {
-            $caseId = 'RP-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(2));
+            $caseId = 'BPD-'.str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(2));
         } while (Subject::withTrashed()->where('case_id', $caseId)->exists());
 
         return $caseId;

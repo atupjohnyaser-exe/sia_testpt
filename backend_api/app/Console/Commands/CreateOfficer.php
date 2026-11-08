@@ -8,11 +8,11 @@ use Illuminate\Console\Command;
 
 class CreateOfficer extends Command
 {
-    protected $signature = 'rpd:create-officer
-        {badge : Badge ID, for example RP-1047}
+    protected $signature = 'bpd:create-officer
+        {badge : Badge ID, for example BPD-1047}
         {name : Full name}
         {--rank=Officer : Rank shown in the app}
-        {--clearance=2 : 1 clerk, 2 officer, 3 detective, 4 supervisor}
+        {--clearance=2 : 1 patrol, 2 senior officer, 3 detective, 4 supervisor, 5 chief admin}
         {--password= : Leave empty to be asked, which keeps it out of shell history}';
 
     protected $description = 'Create an officer account, or reset the password of an existing one';
@@ -22,7 +22,7 @@ class CreateOfficer extends Command
         $level = (int) $this->option('clearance');
 
         if (Clearance::tryFrom($level) === null) {
-            $this->error('Clearance must be 1, 2, 3 or 4.');
+            $this->error('Clearance must be 1, 2, 3, 4 or 5.');
 
             return self::FAILURE;
         }

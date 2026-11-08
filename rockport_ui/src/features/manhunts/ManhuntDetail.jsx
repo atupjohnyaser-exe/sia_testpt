@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { GuardedButton } from '../../components/GuardedButton'
 import { EmptyState, Panel, QueryState, StatusTag } from '../../components/ui'
-import { useAuth } from '../../context/auth'
 import { useToast } from '../../context/toast'
 import { useDeleteManhunt } from '../../hooks/mutations'
 import { useHotkey } from '../../hooks/useHotkeys'
@@ -21,7 +21,6 @@ function Row({ title, value }) {
 export function ManhuntDetail() {
   const { subject } = useOutletContext()
   const { manhuntId } = useParams()
-  const { can } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
   const query = useManhunt(manhuntId)
@@ -114,11 +113,9 @@ export function ManhuntDetail() {
 
             {manhunt.notes && <div className="advisory manhunt-notes"><small>NOTES</small><p>{manhunt.notes}</p></div>}
 
-            {can(4) && (
-              <div className="detail-footer">
-                <button className="button-danger" onClick={removeManhunt}>REMOVE MANHUNT</button>
-              </div>
-            )}
+            <div className="detail-footer">
+              <GuardedButton level={5} action="Removing a manhunt from the crime history" className="button-danger" onClick={removeManhunt}>REMOVE MANHUNT</GuardedButton>
+            </div>
           </>
         )}
       </QueryState>

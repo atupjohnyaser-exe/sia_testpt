@@ -11,7 +11,7 @@ class SubjectListTest extends TestCase
     {
         Subject::factory()->create(['name' => 'Mara Voss', 'alias' => 'The Switch']);
         Subject::factory()->create(['name' => 'Elias Kane', 'alias' => 'Grey Fox']);
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $this->assertCount(1, $this->getJson('/api/v1/subjects?search=voss')->json('data'));
         $this->assertCount(1, $this->getJson('/api/v1/subjects?search=grey')->json('data'));
@@ -20,7 +20,7 @@ class SubjectListTest extends TestCase
     public function test_search_treats_percent_signs_literally(): void
     {
         Subject::factory()->create(['name' => 'Mara Voss']);
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $this->assertCount(0, $this->getJson('/api/v1/subjects?search=%25')->json('data'));
     }
@@ -29,7 +29,7 @@ class SubjectListTest extends TestCase
     {
         Subject::factory()->create(['name' => 'Low', 'bounty' => 10]);
         Subject::factory()->create(['name' => 'High', 'bounty' => 9_000]);
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $response = $this->getJson('/api/v1/subjects?per_page=1')->assertOk();
 
@@ -40,7 +40,7 @@ class SubjectListTest extends TestCase
     {
         Subject::factory()->create(['name' => 'Cleared Big', 'bounty' => 9_999_999, 'status' => 'CLEARED']);
         Subject::factory()->create(['name' => 'Wanted Small', 'bounty' => 5]);
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $names = collect($this->getJson('/api/v1/dashboard/priority')->assertOk()->json('data'))->pluck('name');
 
@@ -58,7 +58,7 @@ class SubjectListTest extends TestCase
         $this->assertSame(1, $this->getJson('/api/v1/dashboard/stats')->json('data.active_records'));
     }
 
-    public function test_deleting_an_infraction_needs_supervisor_clearance(): void
+    public function test_deleting_an_infraction_needs_chief_admin_clearance(): void
     {
         $subject = Subject::factory()->create();
         $this->actingAsLevel(3);
@@ -74,7 +74,7 @@ class SubjectListTest extends TestCase
 
     public function test_responses_are_not_cacheable(): void
     {
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $response = $this->getJson('/api/v1/subjects')->assertHeader('X-Content-Type-Options', 'nosniff');
 

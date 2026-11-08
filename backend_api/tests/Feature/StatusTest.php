@@ -25,7 +25,7 @@ class StatusTest extends TestCase
     public function test_deleting_the_last_infraction_does_not_reset_status(): void
     {
         $subject = Subject::factory()->status(SubjectStatus::Cleared)->create();
-        $this->actingAsLevel(4);
+        $this->actingAsLevel(5);
 
         $id = $this->postJson("/api/v1/subjects/{$subject->id}/infractions", [
             'infraction_type_id' => $this->typeId('trespassing'),

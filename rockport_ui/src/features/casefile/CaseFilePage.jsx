@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ErrorState, LoadingRows } from '../../components/ui'
 import { useCaseFile } from '../../hooks/queries'
@@ -10,23 +11,31 @@ import { dateText, dateTimeText, num } from '../../lib/format'
 export function CaseFilePage() {
   const { id } = useParams()
   const query = useCaseFile(id)
+  // The portrait loads from the server. Printing before it arrives would leave a blank box.
+  const [photoState, setPhotoState] = useState(null)
 
   if (query.isLoading) return <LoadingRows count={6} />
   if (query.isError) return <ErrorState onRetry={() => query.refetch()} message="The case file could not be generated." />
 
   const file = query.data.data
   const subject = file.subject
+  const photoUrl = subject.photo_url
+  const photoDone = photoState?.url === photoUrl
+  const photoReady = !photoUrl || photoDone
+  const showPhoto = Boolean(photoUrl) && !(photoDone && !photoState.ok)
 
   return (
     <article className="case-file">
       <div className="case-file-bar no-print">
         <Link className="button button-outline" to={`/database/${subject.id}`}>← BACK TO RECORD</Link>
-        <button className="button" onClick={() => window.print()}>PRINT / SAVE AS PDF ⎙</button>
+        <button className={`button ${photoReady ? '' : 'is-busy'}`} disabled={!photoReady} onClick={() => window.print()}>
+          {photoReady ? 'PRINT / SAVE AS PDF ⎙' : 'LOADING PORTRAIT…'}
+        </button>
       </div>
 
       <header className="cf-header">
         <div>
-          <small>ROCKPORT POLICE DEPARTMENT // RECORDS DIVISION</small>
+          <small>BOHOL POLICE DEPARTMENT // RECORDS DIVISION</small>
           <h1>CASE FILE {subject.case_id}</h1>
         </div>
         <div className="cf-meta">
@@ -37,18 +46,34 @@ export function CaseFilePage() {
 
       <section className="cf-section">
         <h2>SUBJECT</h2>
-        <div className="cf-grid">
-          <div><small>NAME</small><b>{subject.name}</b></div>
-          <div><small>ALIAS</small><b>{subject.alias || '—'}</b></div>
-          <div><small>AGE</small><b>{subject.age ?? '—'}</b></div>
-          <div><small>STATUS</small><b>{subject.status.replaceAll('_', ' ')}</b></div>
-          <div><small>THREAT LEVEL</small><b>{subject.threat.level} // {subject.threat.label.toUpperCase()}</b></div>
-          <div><small>LAST KNOWN LOCATION</small><b>{subject.last_known_location || '—'}</b></div>
-          <div><small>HEIGHT / EYES / HAIR</small><b>{[subject.height, subject.eye_color, subject.hair_color].filter(Boolean).join(' / ') || '—'}</b></div>
-          <div><small>DISTINGUISHING FEATURES</small><b>{subject.distinguishing_features || '—'}</b></div>
+        <div className="cf-subject">
+          <div className="cf-photo">
+            {showPhoto ? (
+              <img
+                src={photoUrl}
+                alt={`Portrait of ${subject.name}`}
+                onLoad={() => setPhotoState({ url: photoUrl, ok: true })}
+                onError={() => setPhotoState({ url: photoUrl, ok: false })}
+              />
+            ) : (
+              <span>NO PHOTO</span>
+            )}
+          </div>
+          <div className="cf-subject-details">
+            <div className="cf-grid">
+              <div><small>NAME</small><b>{subject.name}</b></div>
+              <div><small>ALIAS</small><b>{subject.alias || '—'}</b></div>
+              <div><small>AGE</small><b>{subject.age ?? '—'}</b></div>
+              <div><small>STATUS</small><b>{subject.status.replaceAll('_', ' ')}</b></div>
+              <div><small>THREAT LEVEL</small><b>{subject.threat.level} // {subject.threat.label.toUpperCase()}</b></div>
+              <div><small>LAST KNOWN LOCATION</small><b>{subject.last_known_location || '—'}</b></div>
+              <div><small>HEIGHT / EYES / HAIR</small><b>{[subject.height, subject.eye_color, subject.hair_color].filter(Boolean).join(' / ') || '—'}</b></div>
+              <div><small>DISTINGUISHING FEATURES</small><b>{subject.distinguishing_features || '—'}</b></div>
+            </div>
+            <p className="cf-response"><small>SUGGESTED RESPONSE</small>{subject.threat.response}</p>
+            {subject.officer_advisory && <p className="cf-response"><small>OFFICER ADVISORY</small>{subject.officer_advisory}</p>}
+          </div>
         </div>
-        <p className="cf-response"><small>SUGGESTED RESPONSE</small>{subject.threat.response}</p>
-        {subject.officer_advisory && <p className="cf-response"><small>OFFICER ADVISORY</small>{subject.officer_advisory}</p>}
       </section>
 
       <section className="cf-section">
@@ -146,7 +171,7 @@ export function CaseFilePage() {
       </section>
 
       <footer className="cf-footer">
-        FICTIONAL TRAINING DATA // THIS FILE WAS GENERATED AND LOGGED BY THE RPD RECORDS NETWORK // AUTHORIZED USE ONLY
+        FICTIONAL TRAINING DATA // THIS FILE WAS GENERATED AND LOGGED BY THE BPD RECORDS NETWORK // AUTHORIZED USE ONLY
       </footer>
     </article>
   )

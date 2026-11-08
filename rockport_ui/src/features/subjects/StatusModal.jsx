@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Field, Modal, ModalActions } from '../../components/ui'
+import { useAuth } from '../../context/auth'
+import { useWarning } from '../../context/warning'
 import { useChangeStatus } from '../../hooks/mutations'
 import { fieldErrors } from '../../lib/errors'
 import { label } from '../../lib/format'
@@ -9,6 +11,8 @@ const STATUSES = ['WANTED', 'IN_CUSTODY', 'PAROLED', 'CLEARED']
 
 export function StatusModal({ subject, onClose }) {
   const change = useChangeStatus(subject.id)
+  const { can } = useAuth()
+  const { deny } = useWarning()
   const options = STATUSES.filter((status) => status !== subject.status)
   const [status, setStatus] = useState(options[0])
   const [reason, setReason] = useState('')
@@ -16,6 +20,13 @@ export function StatusModal({ subject, onClose }) {
 
   const submit = async (event) => {
     event.preventDefault()
+
+    // Clearing a record rewrites the history of a person, so only the Chief Admin can do it.
+    if (status === 'CLEARED' && !can(5)) {
+      deny(5, 'Clearing a record')
+
+      return
+    }
 
     const problems = validateReason(reason, { min: 3 })
 
@@ -40,7 +51,9 @@ export function StatusModal({ subject, onClose }) {
       <form className="record-form" onSubmit={submit} noValidate>
         <Field label="NEW STATUS" error={errors.status}>
           <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            {options.map((option) => <option key={option} value={option}>{label(option)}</option>)}
+            {options.map((option) => (
+              <option key={option} value={option}>{label(option)}{option === 'CLEARED' && !can(5) ? ' (CHIEF ADMIN ONLY)' : ''}</option>
+            ))}
           </select>
         </Field>
         <Field label={`REASON (KEPT IN THE STATUS HISTORY, ${reason.length}/${LIMITS.reason})`} error={errors.reason}>

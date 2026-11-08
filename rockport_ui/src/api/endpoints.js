@@ -7,6 +7,13 @@ const patch = (url, body) => api.patch(url, body).then((response) => response.da
 const remove = (url) => api.delete(url).then((response) => response.data)
 
 export const endpoints = {
+  // places and applying for access (open to everyone)
+  municipalities: () => get('/places/municipalities'),
+  barangays: (id) => get(`/places/municipalities/${id}/barangays`),
+  accessOptions: () => get('/access-requests/options'),
+  submitAccess: (body) => post('/access-requests', body),
+  accessStatus: (reference) => get(`/access-requests/${reference}`),
+
   // auth
   login: (body) => post('/auth/login', body),
   logout: () => post('/auth/logout'),
@@ -61,6 +68,29 @@ export const endpoints = {
   notes: (id, params) => get(`/subjects/${id}/notes`, params),
   addNote: (id, body) => post(`/subjects/${id}/notes`, body),
   deleteNote: (id) => remove(`/notes/${id}`),
+
+  // field reports
+  reports: (params) => get('/reports', params),
+  fileReport: (body) => post('/reports', body),
+  updateReport: (id, body) => put(`/reports/${id}`, body),
+  reviewReport: (id) => post(`/reports/${id}/review`),
+  deleteReport: (id) => remove(`/reports/${id}`),
+
+  // chief admin
+  adminSummary: () => get('/admin/summary'),
+  accessRequests: (params) => get('/admin/access-requests', params),
+  approveRequest: (id, body) => post(`/admin/access-requests/${id}/approve`, body),
+  rejectRequest: (id, body) => post(`/admin/access-requests/${id}/reject`, body),
+  personnel: (params) => get('/admin/personnel', params),
+  createPersonnel: (body) => post('/admin/personnel', body),
+  updatePersonnel: (id, body) => put(`/admin/personnel/${id}`, body),
+  issuePassword: (id, body) => post(`/admin/personnel/${id}/password`, body),
+  setPersonnelActive: (id, active) => post(`/admin/personnel/${id}/${active ? 'activate' : 'deactivate'}`),
+  archivedSubjects: (params) => get('/admin/archived-subjects', params),
+  restoreSubject: (id) => post(`/subjects/${id}/restore`),
+
+  // charts
+  analytics: (id) => get(`/subjects/${id}/analytics`),
 
   // reference data and reports
   costRates: () => get('/cost-rates'),

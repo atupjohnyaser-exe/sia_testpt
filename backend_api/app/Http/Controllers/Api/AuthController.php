@@ -30,7 +30,7 @@ class AuthController extends Controller
 
         // Demo mode only creates accounts for badges that do not exist yet.
         // An existing officer always needs the right key.
-        if ($officer === null && config('rockport.demo_mode')) {
+        if ($officer === null && config('bpd.demo_mode')) {
             $officer = $this->createDemoOfficer($badge, $key);
         }
 
@@ -48,8 +48,8 @@ class AuthController extends Controller
 
         $officer->tokens()->where('expires_at', '<', now())->delete();
 
-        $expiresAt = now()->addMinutes((int) config('rockport.token_ttl_minutes'));
-        $token = $officer->createToken('rpd-dashboard', ['*'], $expiresAt)->plainTextToken;
+        $expiresAt = now()->addMinutes((int) config('bpd.token_ttl_minutes'));
+        $token = $officer->createToken('bpd-dashboard', ['*'], $expiresAt)->plainTextToken;
 
         $officer->forceFill(['last_login_at' => now()])->saveQuietly();
         $audit->record(AuditAction::Login, null, [], $officer->id);
@@ -88,7 +88,7 @@ class AuthController extends Controller
             'name' => 'Officer '.$badge,
             'initials' => substr($letters, 0, 2) ?: 'OF',
             'rank' => 'Officer',
-            'clearance_level' => (int) config('rockport.demo_clearance'),
+            'clearance_level' => (int) config('bpd.demo_clearance'),
             'password' => $key,
         ]);
     }

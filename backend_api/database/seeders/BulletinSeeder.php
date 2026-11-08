@@ -10,9 +10,9 @@ class BulletinSeeder extends Seeder
     public function run(): void
     {
         $bulletins = [
-            ['BUL-4840-A', 'South Harbor District: increased foot patrols through the weekend. Report all sightings to dispatch.'],
-            ['BUL-4840-B', 'Checkpoint rotation changes at 22:00. Supervisors confirm unit counts with central.'],
-            ['BUL-4840-C', 'Records reminder: log every manhunt within 24 hours so cost to state stays accurate.'],
+            ['BUL-4840-A', 'Tubigon, Calape and Loon: increased foot patrols through the weekend. Report all sightings to dispatch.'],
+            ['BUL-4840-B', 'Checkpoint rotation changes at 22:00. Supervisors confirm unit counts with the provincial command.'],
+            ['BUL-4840-C', 'Records reminder: file every field report within 24 hours so cost to state stays accurate.'],
         ];
 
         foreach ($bulletins as $index => [$ref, $body]) {

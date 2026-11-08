@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { NumberInput } from '../../components/NumberInput'
 import { PhotoField } from '../../components/PhotoField'
+import { PlacePicker } from '../../components/PlacePicker'
 import { Field, Modal, ModalActions } from '../../components/ui'
 import { useToast } from '../../context/toast'
 import { useCreateSubject, useDeletePhoto, useUpdateSubject, useUploadPhoto } from '../../hooks/mutations'
 import { errorMessage, fieldErrors } from '../../lib/errors'
+import { composeLocation, splitLocation } from '../../lib/location'
 import { LIMITS, validateSubjectForm } from '../../lib/validation'
 
 const STATUSES = ['WANTED', 'IN_CUSTODY', 'PAROLED', 'CLEARED']
@@ -36,6 +38,7 @@ export function SubjectFormModal({ subject, onClose }) {
   const upload = useUploadPhoto()
   const deletePhoto = useDeletePhoto()
   const [form, setForm] = useState(() => startingValues(subject))
+  const [place, setPlace] = useState(() => splitLocation(subject?.last_known_location))
   const [photo, setPhoto] = useState(null)
   const [removed, setRemoved] = useState(false)
   const [photoError, setPhotoError] = useState('')
@@ -47,7 +50,8 @@ export function SubjectFormModal({ subject, onClose }) {
   const submit = async (event) => {
     event.preventDefault()
 
-    const problems = validateSubjectForm(form)
+    const values = { ...form, last_known_location: composeLocation(place.municipality, place.barangay) }
+    const problems = validateSubjectForm(values)
 
     if (Object.keys(problems).length > 0) {
       setErrors(problems)
@@ -59,7 +63,7 @@ export function SubjectFormModal({ subject, onClose }) {
 
     // A chosen file or a removal replaces any outside link. Otherwise the link box decides.
     const body = {
-      ...form,
+      ...values,
       age: form.age === '' ? null : Number(form.age),
       photo_url: photo || removed ? null : form.photo_url.trim() || null,
     }
@@ -107,7 +111,7 @@ export function SubjectFormModal({ subject, onClose }) {
               </select>
             </Field>
           )}
-          {text('last_known_location', 'LAST KNOWN LOCATION', LIMITS.location)}
+          <PlacePicker value={place} onChange={setPlace} municipalityLabel="LAST KNOWN MUNICIPALITY" barangayLabel="BARANGAY (OPTIONAL)" />
           {text('height', 'HEIGHT (E.G. 5\'8" OR 173 CM)', LIMITS.height)}
           {text('eye_color', 'EYE COLOR', LIMITS.color)}
           {text('hair_color', 'HAIR COLOR', LIMITS.color)}

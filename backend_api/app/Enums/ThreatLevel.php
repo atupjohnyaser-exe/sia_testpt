@@ -13,13 +13,13 @@ enum ThreatLevel: int
 
     /**
      * The highest level whose minimum bounty the subject reaches.
-     * Thresholds live in config/rockport.php and must be in ascending order.
+     * Thresholds live in config/bpd.php and must be in ascending order.
      */
     public static function fromBounty(int $bounty): self
     {
         $level = 1;
 
-        foreach (config('rockport.threat_thresholds') as $candidate => $minimum) {
+        foreach (config('bpd.threat_thresholds') as $candidate => $minimum) {
             if ($bounty >= $minimum) {
                 $level = $candidate;
             }

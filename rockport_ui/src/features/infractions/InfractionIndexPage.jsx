@@ -46,15 +46,37 @@ export function InfractionIndexPage() {
         <QueryState query={query} rows={6}>
           {query.data?.data.length ? (
             <div className="table-scroll">
-              <table className="data-table">
-                <thead><tr><th>DATE</th><th>SUBJECT</th><th>INFRACTION</th><th>LOCATION</th><th className="num">BOUNTY</th><th>STATE</th></tr></thead>
+              <table className="data-table fixed">
+                <colgroup>
+                  <col className="w-date" />
+                  <col className="w-subject" />
+                  <col className="w-infraction" />
+                  <col className="w-place" />
+                  <col className="w-number" />
+                  <col className="w-state" />
+                </colgroup>
+                <thead>
+                  <tr><th>DATE</th><th>SUBJECT</th><th>INFRACTION</th><th>LOCATION</th><th className="num">BOUNTY</th><th>STATE</th></tr>
+                </thead>
                 <tbody>
                   {query.data.data.map((infraction) => (
                     <tr key={infraction.id}>
-                      <td>{dateText(infraction.occurred_on)}</td>
-                      <td>{infraction.subject ? <Link to={`/database/${infraction.subject.id}/infractions`}><b>{infraction.subject.name}</b><span className="subline">{infraction.subject.case_id}</span></Link> : '—'}</td>
-                      <td><b>{infraction.type?.name}</b> <StatusTag status={infraction.type?.severity} /></td>
-                      <td>{infraction.location}</td>
+                      <td className="col-muted">{dateText(infraction.occurred_on)}</td>
+                      <td className="cell-main">
+                        {infraction.subject ? (
+                          <Link to={`/database/${infraction.subject.id}/infractions`}>
+                            <b>{infraction.subject.name}</b>
+                            <span className="cell-sub">{infraction.subject.case_id}</span>
+                          </Link>
+                        ) : '—'}
+                      </td>
+                      <td>
+                        <div className="cell-inline">
+                          <b>{infraction.type?.name}</b>
+                          <StatusTag status={infraction.type?.severity} />
+                        </div>
+                      </td>
+                      <td className="col-muted">{infraction.location}</td>
                       <td className="num">{num(infraction.bounty_value)}</td>
                       <td><span className={`status-tag status-${infraction.served ? 'cleared' : 'wanted'}`}>{infraction.served ? 'SERVED' : 'UNSERVED'}</span></td>
                     </tr>

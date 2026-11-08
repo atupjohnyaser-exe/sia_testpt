@@ -3,7 +3,7 @@ import { tokenStore } from '../api/client'
 import { endpoints } from '../api/endpoints'
 import { AuthContext } from './auth'
 
-const OFFICER_KEY = 'rpd.officer'
+const OFFICER_KEY = 'bpd.officer'
 
 function saveOfficer(officer) {
   try {
@@ -39,9 +39,9 @@ export function AuthProvider({ children }) {
       setReady(true)
     }
 
-    window.addEventListener('rpd:unauthorized', clear)
+    window.addEventListener('bpd:unauthorized', clear)
 
-    return () => window.removeEventListener('rpd:unauthorized', clear)
+    return () => window.removeEventListener('bpd:unauthorized', clear)
   }, [])
 
   // On page load, confirm the saved token still works.

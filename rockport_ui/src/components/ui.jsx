@@ -4,10 +4,10 @@ import { label, num } from '../lib/format'
 export function Logo() {
   return (
     <div className="brand">
-      <div className="brand-seal"><span>RPD</span></div>
+      <div className="brand-seal"><span>BPD</span></div>
       <div>
-        <small>ROCKPORT // RECORDS DIVISION</small>
-        <strong>COMMAND CENTER</strong>
+        <small>BOHOL POLICE DEPARTMENT</small>
+        <strong>RECORDS COMMAND CENTER</strong>
       </div>
     </div>
   )
@@ -80,7 +80,7 @@ export function EmptyState({ title = 'NOTHING HERE YET', message = '' }) {
 export function PageFooter() {
   return (
     <footer className="page-footer">
-      <span>RPD RECORDS NETWORK // AUTHORIZED USE ONLY</span>
+      <span>BPD RECORDS NETWORK // AUTHORIZED USE ONLY</span>
       <strong>FICTIONAL TRAINING DATA</strong>
       <span>SESSION ENCRYPTED</span>
     </footer>
@@ -169,7 +169,7 @@ export function ModalActions({ onClose, busy, submitLabel, busyLabel = 'SAVINGâ€
   return (
     <div className="modal-actions">
       <button type="button" className="button button-outline" onClick={onClose}>CANCEL</button>
-      <button className="button" disabled={busy}>{busy ? busyLabel : submitLabel}</button>
+      <button className={`button ${busy ? 'is-busy' : ''}`} disabled={busy}>{busy ? busyLabel : submitLabel}</button>
     </div>
   )
 }

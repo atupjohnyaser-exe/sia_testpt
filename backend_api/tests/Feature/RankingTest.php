@@ -43,7 +43,7 @@ class RankingTest extends TestCase
 
     public function test_an_unknown_category_is_rejected(): void
     {
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $this->getJson('/api/v1/rankings?category=bounty;drop')->assertStatus(422);
     }

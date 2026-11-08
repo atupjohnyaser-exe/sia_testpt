@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Clearance;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -13,7 +14,10 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory;
 
-    protected $fillable = ['name', 'badge_id', 'initials', 'rank', 'clearance_level', 'is_active', 'password'];
+    protected $fillable = [
+        'name', 'badge_id', 'initials', 'rank', 'clearance_level', 'is_active', 'password',
+        'email', 'phone', 'date_of_birth', 'station', 'address', 'years_of_service',
+    ];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -23,13 +27,21 @@ class User extends Authenticatable
             'clearance_level' => 'integer',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'date_of_birth' => 'date',
+            'approved_at' => 'datetime',
+            'password_issued_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
 
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'approved_by');
+    }
+
     public function clearance(): Clearance
     {
-        return Clearance::tryFrom((int) $this->clearance_level) ?? Clearance::Clerk;
+        return Clearance::tryFrom((int) $this->clearance_level) ?? Clearance::Patrol;
     }
 
     public function hasClearance(Clearance|int $minimum): bool

@@ -4,7 +4,7 @@ const whole = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
  * Realistic made-up numbers for the "generate demo numbers" button
  * on the manhunt form. Training use only.
  */
-export function simulateManhunt(districts, infractionTypes) {
+export function simulateManhunt(places, infractionTypes) {
   const duration = whole(300, 3600)
   const extra = infractionTypes.length ? infractionTypes.filter(() => Math.random() < 0.18).slice(0, 3) : []
 
@@ -12,7 +12,7 @@ export function simulateManhunt(districts, infractionTypes) {
     minutes: Math.floor(duration / 60),
     seconds: duration % 60,
     outcome: Math.random() < 0.7 ? 'EVADED' : 'APPREHENDED',
-    district: districts[whole(0, districts.length - 1)] || 'Civic District',
+    district: places[whole(0, places.length - 1)] || 'Tubigon',
     counts: {
       officers_involved: whole(4, 60),
       officers_injured: whole(0, 4),

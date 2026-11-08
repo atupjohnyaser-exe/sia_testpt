@@ -14,6 +14,14 @@ export function fieldErrors(error) {
   return result
 }
 
+/** True when the server refused because the officer's clearance is too low. */
+export function isClearanceError(error) {
+  return error?.response?.status === 403 && error.response.data?.code === 'clearance_required'
+}
+
+/** A message for a toast. Empty for clearance refusals, because the warning banner already shows those. */
 export function errorMessage(error, fallback = 'Something went wrong. Try again.') {
+  if (isClearanceError(error)) return ''
+
   return error?.response?.data?.message || fallback
 }

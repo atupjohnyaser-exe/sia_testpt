@@ -1,10 +1,9 @@
-# Rockport Records API
+# Bohol Police Department Records API
 
-Laravel API for the Rockport Police Department records dashboard. It is the rebuilt backend:
-people with a bounty, manhunts, infractions, known locations and a cost to the state,
-all behind clearance levels and an audit log.
+Laravel API for the Bohol Police Department records dashboard: people with a bounty, manhunts, infractions,
+field reports, real Bohol places from PSGC, five clearance levels, and a Chief Admin who decides who gets in.
 
-> **Status:** written and checked by reading and a static script, but **not run**.
+> **Status:** written and checked by reading and a static script, but **not run** on my side (no PHP there).
 > The first thing to do is `php artisan test`. If something fails, send me the output.
 
 ## Setup
@@ -13,195 +12,169 @@ all behind clearance levels and an audit log.
 composer install
 cp .env.example .env
 php artisan key:generate
-# create an empty MySQL database called rockport_records, then set DB_* in .env
-php artisan migrate:fresh --seed     # wipes the tables, fine for the demo data
-php artisan serve                     # API at http://localhost:8000/api/v1
-php artisan test                      # needs the pdo_sqlite PHP extension
+# create an empty MySQL database (for example bohol_records), then set DB_* in .env
+php artisan migrate:fresh --seed     # wipes the tables, fine for demo data
+php artisan bpd:sync-places          # real municipalities and barangays of Bohol (needs internet)
+php artisan serve                    # API at http://localhost:8000/api/v1
+php artisan test                     # needs the pdo_sqlite PHP extension
 ```
 
-If `composer install` complains about the lock file, run `composer update` once.
+### Updating an install that already works
 
-The old database layout is gone (offenses became infractions, risk score became bounty).
-Use `migrate:fresh`, do not try to migrate an old database in place.
+```bash
+php artisan migrate                  # adds new tables and columns, keeps your data
+php artisan db:seed --class=OfficerSeeder       # adds the Chief Admin and the new ranks
+php artisan db:seed --class=BulletinSeeder      # bulletin text with real places
+php artisan db:seed --class=ReportSeeder        # a few demo field reports
+php artisan bpd:sync-places          # real places
+php artisan optimize:clear
+```
 
-### Demo officers
+`migrate` also renames badge IDs and case IDs from `RP-` to `BPD-` and swaps the old made-up districts for real
+Bohol municipalities. Nothing else is touched.
 
-Created by the seeder in local environments. Password is `demo1234`, or whatever you put in
-`SEED_OFFICER_PASSWORD`. In production the seeder refuses to create them without that variable.
+### Demo officers (local only)
 
-| Badge | Name | Clearance |
-|---|---|---|
-| RP-1001 | Supt. R. Hale | 4 Supervisor |
-| RP-1047 | Det. A. Cross | 3 Detective |
-| RP-1102 | Ofc. T. Reyes | 2 Officer |
-| RP-1200 | Clerk M. Ono | 1 Records Clerk |
+Password `demo1234`, or whatever `SEED_OFFICER_PASSWORD` says. In production the seeder refuses without it.
 
-Add real officers with `php artisan rpd:create-officer RP-2000 "Jane Doe" --clearance=3`.
+| Badge | Name | Rank | Level |
+|---|---|---|---|
+| BPD-1000 | Col. R. Villanueva | Provincial Director | 5 Chief Admin |
+| BPD-1001 | PLTCOL R. Hale | Police Lieutenant Colonel | 4 Supervisor |
+| BPD-1047 | Det. A. Cross | Detective | 3 Detective |
+| BPD-1102 | PSSg T. Reyes | Police Staff Sergeant | 2 Senior Officer |
+| BPD-1200 | Pat. M. Ono | Patrolman / Patrolwoman | 1 Patrol Officer |
+
+Create real accounts with `php artisan bpd:create-officer BPD-2000 "Jane Doe" --clearance=3`.
+Chief Admin accounts (level 5) can only be created and changed from the command line.
 
 ## Clearance levels
 
-| Level | Can do |
-|---|---|
-| 1 Records Clerk | Read everything except restricted notes and the advisory text |
-| 2 Officer | Add infractions, manhunts, sightings and notes |
-| 3 Detective | Create and edit records, change status, mark infractions served or fines paid |
-| 4 Supervisor | Archive and restore, export, delete infractions and manhunts, threat override, cost rates, audit log |
+Each level includes everything below it.
 
-Each level includes the ones below it. Routes are grouped by level in `routes/api.php`.
+| Level | Role | Can do |
+|---|---|---|
+| 1 | Patrol Officer | File field reports. See and edit only their own reports until they are reviewed. See no records of people. Delete nothing |
+| 2 | Senior Officer | Read the database of people. Add infractions, manhunts, sightings and notes. See, edit and review every report. Needs a higher level to create or change records |
+| 3 | Detective | Create and edit records. Change status. Mark infractions served or fines paid. Photos. Case files |
+| 4 | Supervisor | Archive records. Export. Threat override. Cost rates. Audit log |
+| 5 | Chief Admin | Everything above, plus: personnel and their personal information, review access applications, issue passwords, correct crime history (remove infractions and manhunts), clear or re-open a record, restore archived records, delete reports |
+
+A refused request answers `403` with `required_level`, `required_label`, `your_level` and `your_label`, and writes
+`access_denied` to the audit log. The app shows it as a warning.
+
+## Getting access
+
+1. An officer fills in the public application form (`POST /access-requests`): name, rank, birth date, mobile number,
+   station, address, years of service, and why they need access. They choose neither a badge ID nor a password.
+2. The **rank** decides the highest level. Detectives get level 3 on the application without a decision. Every
+   other rank starts at what its rank allows and the Chief Admin picks the level. Nobody can apply for level 5.
+3. The Chief Admin reviews it (`/admin/access-requests`). Approving creates the account with a **random made-up
+   badge ID** (BPD-4821) and a **password issued by the Chief Admin** (a strong random one, or one they type).
+   The password is shown once and is never stored in readable form.
+4. The officer can check progress with their reference number (`ACC-XXXXXXXXXX`). After approval they see their badge ID.
+   The password is handed over by the Chief Admin in person.
+
+Rank ladder and limits are in `config/bpd.php`:
+
+| Rank | Highest level |
+|---|---|
+| Patrolman / Patrolwoman, Police Corporal | 1 |
+| Police Staff Sergeant to Police Executive Master Sergeant | 2 |
+| Police Lieutenant, **Detective** (automatic) | 3 |
+| Police Captain, Major, Lieutenant Colonel, Colonel | 4 |
+| Provincial Director | 5 (command line only) |
+
+## Places (PSGC)
+
+`php artisan bpd:sync-places` reads the official Philippine Standard Geographic Code through PSGC Cloud
+(`https://psgc.cloud/api/v2`): the municipalities of Bohol, the capital city of Tagbilaran (turn off with
+`PSGC_INCLUDE_CITIES=false`), and the barangays of each. It is polite (a short pause between calls), safe to run
+again, and reports any town it could not load. A built-in list of the 47 municipalities and the city is
+loaded by the seeder so every dropdown works before the first sync.
 
 ## How the numbers work
 
 **Bounty** = bounty of every unserved infraction + bounty of every manhunt.
-Serving an infraction removes its bounty. Fines have their own due and paid totals.
-
-**Threat level (1 to 6)** comes from the bounty (`config/rockport.php`):
-1 under 10,000, 2 from 10,000, 3 from 100,000, 4 from 500,000, 5 from 2,000,000, 6 from 10,000,000.
-Each level has a label and a suggested response. A supervisor can pin a level with a reason.
-
-**Status** (`WANTED`, `IN_CUSTODY`, `PAROLED`, `CLEARED`) is explicit and only changes in two ways:
-a detective changes it with a reason, or a manhunt outcome does it
-(apprehended means `IN_CUSTODY`, evaded means `WANTED`). Adding or deleting infractions never touches it.
-Every change is kept in `status_changes`.
-
-**Cost to state** = quantity x unit price for officers deployed, officers injured, units stood down,
-checkpoints, K-9 units, helicopters, property damage incidents and insurance claims.
-Prices are in `cost_rates`. A manhunt stores its own cost and bounty when it is logged,
-so changing a price later does not rewrite history. Manhunt bounty = its cost x 0.4.
-
-Fine and bounty on an infraction are copied from its type when it is recorded, for the same reason.
+**Threat level (1 to 6)** comes from the bounty (`config/bpd.php`). A supervisor can pin a level with a reason.
+**Status** (`WANTED`, `IN_CUSTODY`, `PAROLED`, `CLEARED`) changes only when a detective changes it with a reason,
+or when a manhunt outcome does it. Clearing a record, or re-opening a cleared one, needs the Chief Admin.
+**Cost to state** = quantity x unit price. A manhunt stores its own cost and bounty when logged.
 
 ## Security
 
-- Demo mode is off by default. When on, it only creates accounts for badges that do not exist yet,
-  at clearance 2, and never skips the key check for an existing officer.
-- Login: same 401 for unknown badge, wrong key or deactivated officer, rate limited per badge and IP,
-  failed attempts written to the audit log, constant-time style dummy check for unknown badges.
-- Tokens expire (`TOKEN_TTL_MINUTES`, default 8 hours) and are revoked on logout.
-- Deactivating an officer (`is_active = false`) locks them out even if they hold a valid token.
-- Status, bounty, threat level and case id cannot be set through create or update requests.
-- `photo_url` only accepts http and https.
-- Audit log is written by an observer, so new endpoints cannot forget it. Exports are logged.
-  Opening a record is logged once per officer per 10 minutes. Note text is never copied into the log.
-  Audit rows cannot be updated or deleted through the model.
-- Responses send `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
-- Nothing secret is in this folder. `.env` is in `.gitignore`.
-- Every input has a limit (see Input limits). Free text is checked for HTML, control characters and
-  hidden direction characters. Names and similar fields use character whitelists.
-- Portrait uploads: JPG, PNG or WebP only (no SVG), up to 2 MB, 100 to 3000 pixels per side, type read
-  from the file contents. The client's file name is never used. When the GD extension is on, the image
-  is decoded and saved again, which removes camera data and anything hidden in the file. Files sit on
-  the private disk and are served through a signed link that expires with the session.
-- Responses also send `X-Frame-Options: DENY`, a locked-down `Content-Security-Policy` and `Permissions-Policy`.
+- Demo mode is off by default and never skips the key check for an existing officer.
+- Login: same 401 for every failure, rate limited, failed attempts logged. Tokens expire and are revoked on logout.
+- Application form: public, so it is limited to 5 per hour per address, has a hidden bot trap, one waiting
+  application per person, and only shows status (never personal details) to the applicant.
+- The rank limit is enforced on the server for applications, approvals and edits. Level 5 is never handed out by the app.
+- Only the Chief Admin issues passwords. A new password signs the person out everywhere. Deactivating does too.
+- Every input has a limit (see below). Free text is checked for HTML, control characters and hidden direction characters.
+- Portrait uploads: JPG, PNG or WebP only, up to 2 MB, type read from the file contents, random file names, private
+  disk, signed expiring links, re-encoded when the GD extension is on.
+- The audit log is written by observers and cannot be edited or deleted. It records access requests, approvals,
+  password issues, refused requests, exports, reports and every change to a record.
 
 ## Input limits
 
 | Field | Rule |
 |---|---|
-| Name | 2 to 120. Letters (any language), spaces, apostrophes, periods, hyphens. No digits |
+| Names | 2 to 120. Letters (any language), spaces, apostrophes, periods, hyphens. No digits. Officers need first and last name |
 | Alias | 2 to 80. Letters, numbers, spaces, quotes, apostrophes, periods, hyphens |
-| Age | Whole number, 1 to 120 |
-| Height | Up to 20. Digits, quotes, spaces and the letters c m f t i n (5'8", 173 cm) |
-| Eye and hair colour | Up to 30. Letters, spaces, slash, hyphen |
-| Location, district | Up to 120 and 100. Plain text |
-| Features, advisory | Up to 500 and 2000. Plain text |
-| Notes, reasons | Notes 3 to 5000. Status and threat reasons 3 or 5 to 300. Plain text |
-| Photo link | http or https, up to 2048 |
-| Infraction date | 1970 up to tomorrow |
-| Manhunt | 1 second to 48 hours. Counts 0 to 5000 (checkpoints 500, K-9 200, helicopters 50). Up to 20 infractions |
-| Cost rate | 0 to 1,000,000, up to 20 rates, no repeated codes |
-| Login | Badge 3 to 20 letters, numbers, hyphens. Key up to 128 |
-| Lists | `page` 1 to 100000, `per_page` 1 to 100, `search` up to 100, sort and filter values checked |
-| Officer passwords (command) | At least 12, with letters and numbers |
+| Age (subjects) | Whole number, 1 to 120 |
+| Officer birth date | Age 21 to 65. Years of service cannot exceed age minus 18 |
+| Mobile number | Philippine format, 09 plus nine digits (+63 and spaces are cleaned up) |
+| Places | Municipality must be a real one from the list. Barangay must belong to it once barangays are loaded |
+| Height, colours | Short formats (5'8", 173 cm. Letters only) |
+| Reports | Narrative 20 to 3000. Person involved optional. Not in the future |
+| Free text | Plain text only. Location 120, features 500, advisory 2000, notes 5000, reasons 300 |
+| Manhunt | 1 second to 48 hours. Counts 0 to 5000 (checkpoints 500, K-9 200, helicopters 50) |
+| Lists | `page` 1 to 100000, `per_page` 1 to 100, search up to 100, sort and filter values checked |
+| Passwords | At least 12, with letters and numbers |
 
-"Plain text" means no HTML tags, no control characters and no invisible or direction changing characters.
-
-Uploads need PHP's `upload_max_filesize` and `post_max_size` to be at least 3M. Turn on `extension=gd` in `php.ini` to have images cleaned on upload.
+Uploads need PHP's `upload_max_filesize` and `post_max_size` at 3M or more. Turn on `extension=gd` to have images cleaned.
 
 ## Endpoints
 
-Base path `/api/v1`. All except login need `Authorization: Bearer <token>`.
-Lists are paginated (`?page=`, `?per_page=` up to 100).
+Base path `/api/v1`. Level `-` means open to anyone.
 
 | Method and path | Level | What it does |
 |---|---|---|
-| POST `/auth/login` | none | `badge_id`, `access_key`. Returns token, expiry, officer |
-| POST `/auth/logout` | any | Revokes the token |
-| GET `/auth/me` | 1 | Current officer |
-| GET `/dashboard/stats` | 1 | Counts, total bounty, total cost to state |
-| GET `/dashboard/priority` | 1 | Five highest bounties, cleared people left out |
-| GET `/bulletins/current` | 1 | Rotating bulletin |
-| GET `/subjects` | 1 | `search`, `status`, `threat_level`, `sort` (bounty, threat, name, recent) |
-| GET `/subjects/{id}` | 1 | One record, with the five latest infractions |
-| GET `/subjects/{id}/rap-sheet` | 1 | Header and summary numbers |
-| GET `/subjects/{id}/infraction-summary` | 1 | Infractions by type, unserved and total |
-| GET `/subjects/{id}/cost-to-state` | 1 | Quantity x cost table and total |
-| GET `/subjects/{id}/locations` | 1 | Sightings by district, latest sightings |
-| GET `/subjects/{id}/status-history` | 1 | Every status change with reason |
-| GET `/subjects/{id}/infractions` | 1 | `served=true\|false` |
-| GET `/subjects/{id}/manhunts` | 1 | `sort` (bounty, recent, length), `top=5` |
-| GET `/subjects/{id}/notes` | 1 | Notes, restricted ones masked |
-| GET `/infractions`, `/manhunts`, `/manhunts/{id}` | 1 | Global lists and manhunt detail |
-| GET `/infraction-types`, `/cost-rates` | 1 | Reference data |
-| GET `/rankings` | 1 | `scope` (single, lifetime), `category`, `limit` |
-| POST `/subjects/{id}/infractions` | 2 | `infraction_type_id`, `occurred_on`, `location`, `disposition` |
-| POST `/subjects/{id}/manhunts` | 2 | Duration, outcome, district, counts, optional `infractions[]` |
-| POST `/subjects/{id}/sightings` | 2 | `district`, `seen_at`, optional address and source |
-| POST `/subjects/{id}/notes` | 2 | `body`, optional `access_level` up to your own level |
-| DELETE `/notes/{id}` | 2 | Author or supervisor |
-| POST `/subjects` | 3 | Create. Optional starting `status` |
-| PUT `/subjects/{id}` | 3 | Profile fields only |
-| POST `/subjects/{id}/status` | 3 | `status`, `reason` |
-| PATCH `/infractions/{id}` | 3 | `served` and/or `fine_paid` |
-| POST `/subjects/{id}/photo` | 3 | Upload a portrait (`photo`, multipart). JPG, PNG or WebP, up to 2 MB |
-| DELETE `/subjects/{id}/photo` | 3 | Remove the portrait and its file |
-| GET `/subjects/{id}/photo` | signed link | Serves the portrait. The link comes from the record and expires |
-| POST `/subjects/{id}/case-file` | 3 | Everything for the printable case file in one response. Audited as `case_file_generated` |
-| DELETE `/subjects/{id}` | 4 | Archive (soft delete) |
-| POST `/subjects/{id}/restore` | 4 | Restore |
-| GET `/subjects/export` | 4 | Streamed JSON of every record, audited |
-| PUT `/subjects/{id}/threat-override` | 4 | `level` (1 to 6 or null), `reason` |
-| DELETE `/infractions/{id}`, `/manhunts/{id}` | 4 | Remove |
-| PUT `/cost-rates` | 4 | `rates: [{code, unit_cost}]` |
-| GET `/audit-logs` | 4 | `user_id`, `subject_id`, `action`, `from`, `to` |
-
-Ranking categories: `length`, `officers_involved`, `officers_injured`, `units_stood_down`,
-`checkpoints`, `k9_units`, `helicopters`, `cost`, `bounty`, `infractions`.
+| POST `/auth/login` | - | `badge_id`, `access_key` |
+| GET `/places/municipalities`, `/places/municipalities/{id}/barangays` | - | Real Bohol places |
+| GET `/access-requests/options` | - | Ranks and the level each one gets |
+| POST `/access-requests` | - | Apply for access |
+| GET `/access-requests/{reference}` | - | Status of an application |
+| POST `/auth/logout`, GET `/auth/me` | 1 | Session |
+| GET `/dashboard/stats`, `/bulletins/current`, `/infraction-types` | 1 | Numbers, bulletin, types |
+| GET, POST `/reports`, GET, PUT `/reports/{id}` | 1 | File and read reports (own only at level 1) |
+| GET `/dashboard/priority` | 2 | Five highest bounties |
+| GET `/subjects`, `/subjects/{id}` and its sub pages (`rap-sheet`, `infraction-summary`, `cost-to-state`, `locations`, `analytics`, `status-history`, `infractions`, `manhunts`, `notes`) | 2 | The database of people |
+| GET `/infractions`, `/manhunts`, `/manhunts/{id}`, `/rankings`, `/cost-rates` | 2 | Lists and rankings |
+| POST `/subjects/{id}/infractions`, `/manhunts`, `/sightings`, `/notes`; DELETE `/notes/{id}` | 2 | Field records |
+| POST `/reports/{id}/review` | 2 | Mark a report reviewed |
+| POST `/subjects`, PUT `/subjects/{id}`, POST `/subjects/{id}/status`, `/case-file`, `/photo`, DELETE `/subjects/{id}/photo`, PATCH `/infractions/{id}` | 3 | Records |
+| GET `/subjects/export`, DELETE `/subjects/{id}`, PUT `/subjects/{id}/threat-override`, PUT `/cost-rates`, GET `/audit-logs` | 4 | Supervisor |
+| POST `/subjects/{id}/restore`, DELETE `/infractions/{id}`, `/manhunts/{id}`, `/reports/{id}` | 5 | Corrections |
+| GET `/admin/summary`, `/admin/archived-subjects` | 5 | Chief Admin |
+| GET `/admin/access-requests`, POST `.../{id}/approve`, `.../{id}/reject` | 5 | Review applications |
+| GET, POST `/admin/personnel`, PUT `/admin/personnel/{id}`, POST `.../password`, `.../activate`, `.../deactivate` | 5 | Personnel |
 
 ## Layout
 
 ```
 app/Enums          Clearance, SubjectStatus, ThreatLevel, ManhuntOutcome, Severity, AuditAction
-app/Services       StatusService, SubjectStatsService, ManhuntService, InfractionService,
-                   CostToStateCalculator, RankingService, AuditLogger, SubjectService
+app/Support        Ranks (rank ladder), Patterns (character whitelists), Denied (the 403 answer)
+app/Services       AccessRequestService, PersonnelService, CredentialService, PlaceService, PsgcClient,
+                   StatusService, SubjectStatsService, ManhuntService, InfractionService, AuditLogger ...
 app/Observers      AuditObserver
-app/Http/...       thin controllers, form requests, resources, clearance middleware
-database/seeders   reference data, demo officers, fictional demo people (no outside calls)
-tests              auth, clearance, status, bounty and cost, audit, rankings, lists
+app/Http/...       thin controllers (Admin/ for the Chief Admin), form requests, resources, clearance middleware
+config/bpd.php     ranks, thresholds, PSGC settings, limits
+database/seeders   places, officers, reference data, fictional demo people and reports
+tests              clearance, reports, access requests, personnel, places, status, bounty, audit, rankings ...
 ```
-
-## What changed from the first version
-
-| Problem found in review | Now |
-|---|---|
-| Demo login accepted any key for existing officers, on by default | Off by default, never skips the key check |
-| `.env`, log and database file inside the zip | Not included |
-| Seeder always created `RP-1047` / `demo1234` | Local only, or needs `SEED_OFFICER_PASSWORD` |
-| Export was not audited, loaded everything at once | Audited, streamed in chunks |
-| Tokens never expired, failed logins not logged | Expire, failed logins logged |
-| Status guessed from outcome text, blank meant WANTED | Explicit status with history and reasons |
-| Deleting the last offense reset status to WANTED | Status is never touched by infractions |
-| Risk override always on | Bounty and threat are calculated, with a supervisor override |
-| Dashboard numbers cached 30 seconds | No cache, always current |
-| Audit log full of repeat "viewed" rows | One view per officer per 10 minutes |
-| Deletions logged as "updated" | Own actions, written by the observer |
-| Clearance 4 and restricted notes unreachable | Four real levels, restricted notes work |
-| Dead and duplicate code, one-line controllers | Services, thin controllers, enums |
-| Welcome page test needed Vite build | No web routes, `/up` health check only |
 
 ## Frontend
 
-The React app lives in its own folder (`rockport_ui`). It talks to this API at `/api/v1`.
+The React app lives in its own folder (`bpd_ui`). It talks to this API at `/api/v1`.
 Set `FRONTEND_URL` in `.env` if the app does not run on `http://localhost:5173`.
-
-Times are stored in UTC. The app sends timestamps in UTC and shows them in your own time zone.
-Infraction dates may be up to one day ahead of the server date, so officers ahead of UTC can still enter today.

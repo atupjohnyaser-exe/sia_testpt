@@ -17,7 +17,7 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'badge_id' => fake()->unique()->bothify('RP-####'),
+            'badge_id' => fake()->unique()->bothify('BPD-####'),
             'initials' => 'TS',
             'rank' => 'Detective',
             'clearance_level' => 3,

@@ -6,6 +6,7 @@ use App\Enums\AuditAction;
 use App\Models\CaseNote;
 use App\Models\Infraction;
 use App\Models\Manhunt;
+use App\Models\Report;
 use App\Models\Sighting;
 use App\Models\StatusChange;
 use App\Models\Subject;
@@ -56,7 +57,7 @@ class AuditObserver
             return;
         }
 
-        $subjectId = $model instanceof Subject ? $model->id : $model->subject_id;
+        $subjectId = $model instanceof Subject ? $model->id : ($model->subject_id ?? null);
 
         $this->audit->record($action, $subjectId, $meta);
     }
@@ -88,6 +89,12 @@ class AuditObserver
                 default => null,
             },
             $model instanceof Sighting => $event === 'created' ? AuditAction::SightingAdded : null,
+            $model instanceof Report => match ($event) {
+                'created' => AuditAction::ReportFiled,
+                'updated' => $model->wasChanged('status') ? AuditAction::ReportReviewed : AuditAction::ReportUpdated,
+                'deleted' => AuditAction::ReportDeleted,
+                default => null,
+            },
             $model instanceof StatusChange => ($event === 'created' && $model->from_status !== null) ? AuditAction::StatusChanged : null,
             default => null,
         };
@@ -105,6 +112,7 @@ class AuditObserver
             $model instanceof Manhunt => ['manhunt' => $model->code, 'outcome' => $model->outcome?->value],
             $model instanceof CaseNote => ['note_id' => $model->id],
             $model instanceof Sighting => ['district' => $model->district],
+            $model instanceof Report => ['reference' => $model->reference, 'municipality' => $model->municipality],
             $model instanceof StatusChange => [
                 'from' => $model->from_status?->value,
                 'to' => $model->to_status->value,

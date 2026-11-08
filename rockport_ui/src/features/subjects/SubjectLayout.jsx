@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
+import { GuardedButton, GuardedLink } from '../../components/GuardedButton'
 import { ErrorState, LoadingRows, StatusTag } from '../../components/ui'
-import { useAuth } from '../../context/auth'
 import { useToast } from '../../context/toast'
 import { useArchiveSubject } from '../../hooks/mutations'
 import { useSubject } from '../../hooks/queries'
@@ -15,7 +15,6 @@ export function SubjectLayout() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { can } = useAuth()
   const query = useSubject(id)
   const archive = useArchiveSubject()
   const [modal, setModal] = useState(null)
@@ -48,15 +47,15 @@ export function SubjectLayout() {
       <div className="active-file">
         <span><small>ACTIVE FILE</small><b>{subject.case_id}</b></span>
         <div className="record-actions">
-          {can(3) && <button className="button button-outline" onClick={() => setModal('edit')}>EDIT</button>}
-          {can(3) && <button className="button button-outline" onClick={() => setModal('status')}>CHANGE STATUS</button>}
-          {can(3) && <Link className="button button-outline" to={`/case-file/${subject.id}`}>CASE FILE</Link>}
-          {can(4) && <button className="button-danger" onClick={archiveRecord}>ARCHIVE</button>}
+          <GuardedButton level={3} action="Editing a record" onClick={() => setModal('edit')}>EDIT</GuardedButton>
+          <GuardedButton level={subject.status === 'CLEARED' ? 5 : 3} action={subject.status === 'CLEARED' ? 'Re-opening a cleared record' : 'Changing a status'} onClick={() => setModal('status')}>CHANGE STATUS</GuardedButton>
+          <GuardedLink level={3} action="Printing a case file" to={`/case-file/${subject.id}`}>CASE FILE</GuardedLink>
+          <GuardedButton level={4} action="Archiving a record" className="button-danger" onClick={archiveRecord}>ARCHIVE</GuardedButton>
         </div>
       </div>
 
       <section className="subject-profile">
-        <div className="photo-placeholder">
+        <div className={`photo-placeholder ${subject.photo_url && subject.photo_url !== brokenPhoto ? 'has-photo' : ''}`}>
           {subject.photo_url && subject.photo_url !== brokenPhoto ? (
             <img src={subject.photo_url} alt={`Portrait of ${subject.name}`} onError={() => setBrokenPhoto(subject.photo_url)} />
           ) : (
@@ -85,6 +84,7 @@ export function SubjectLayout() {
         <NavLink to={`${base}/manhunts`}>MANHUNTS{subject.times_evaded + subject.times_apprehended > 0 && <i>{subject.times_evaded + subject.times_apprehended}</i>}</NavLink>
         <NavLink to={`${base}/locations`}>LOCATIONS</NavLink>
         <NavLink to={`${base}/cost`}>COST TO STATE</NavLink>
+        <NavLink to={`${base}/analytics`}>ANALYTICS</NavLink>
         <NavLink to={`${base}/notes`}>NOTES</NavLink>
         <NavLink to={`${base}/history`}>HISTORY</NavLink>
       </nav>

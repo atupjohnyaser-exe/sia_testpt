@@ -60,7 +60,7 @@ class CaseFileTest extends TestCase
 
     public function test_cost_rates_include_the_bounty_multiplier(): void
     {
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $this->getJson('/api/v1/cost-rates')->assertOk()->assertJsonPath('meta.bounty_multiplier', 0.4)->assertJsonPath('data.0.code', 'officers_involved');
     }

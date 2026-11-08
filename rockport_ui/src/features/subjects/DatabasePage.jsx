@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { endpoints } from '../../api/endpoints'
+import { GuardedButton } from '../../components/GuardedButton'
 import { Pagination, StatusTag } from '../../components/ui'
 import { ThreatPips } from '../../components/ThreatMeter'
-import { useAuth } from '../../context/auth'
 import { useToast } from '../../context/toast'
 import { useFocusShortcut, useListHotkeys } from '../../hooks/useHotkeys'
 import { useSubjects } from '../../hooks/queries'
@@ -28,7 +28,6 @@ export function DatabasePage() {
   const location = useLocation()
   const match = useMatch('/database/:id/*')
   const activeId = match?.params.id ? Number(match.params.id) : null
-  const { can } = useAuth()
   const toast = useToast()
   const searchRef = useRef(null)
 
@@ -87,7 +86,7 @@ export function DatabasePage() {
       const link = document.createElement('a')
 
       link.href = url
-      link.download = 'rockport-subjects.json'
+      link.download = 'bpd-subjects.json'
       link.click()
       URL.revokeObjectURL(url)
       toast('EXPORT COMPLETE // LOGGED IN AUDIT LOG')
@@ -154,8 +153,8 @@ export function DatabasePage() {
 
         <Pagination meta={meta} onPage={setPage} />
 
-        {can(3) && <button className="button create-record" onClick={() => setCreating(true)}>+ CREATE RECORD</button>}
-        {can(4) && <button className="export-button" onClick={exportJson} disabled={exporting}>{exporting ? 'EXPORTING…' : 'EXPORT ALL AS JSON (AUDITED)'}</button>}
+        <GuardedButton level={3} action="Creating a record" className="button create-record" onClick={() => setCreating(true)}>+ CREATE RECORD</GuardedButton>
+        <GuardedButton level={4} action="Exporting the database" className="export-button" onClick={exportJson} disabled={exporting}>{exporting ? 'EXPORTING…' : 'EXPORT ALL AS JSON (AUDITED)'}</GuardedButton>
       </aside>
 
       <section className="record-detail"><Outlet /></section>

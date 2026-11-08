@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/auth'
 import { errorMessage } from '../../lib/errors'
 import { LIMITS, validateLogin } from '../../lib/validation'
@@ -46,8 +46,8 @@ export function LoginPage() {
     <main className="login-screen">
       <section className="login-hero">
         <div className="login-brand">
-          <div className="brand-seal"><span>RPD</span></div>
-          <b>ROCKPORT POLICE DEPARTMENT</b>
+          <div className="brand-seal"><span>BPD</span></div>
+          <b>BOHOL POLICE DEPARTMENT</b>
         </div>
         <div className="hero-copy">
           <small className="eyebrow">SECURE RECORDS NETWORK // SRN-04</small>
@@ -59,7 +59,7 @@ export function LoginPage() {
           <div><small>DATABASE</small><b>ONLINE</b></div>
           <div><small>SESSION</small><b>8 HOUR LIMIT</b></div>
         </div>
-        <span className="hero-watermark">RPD</span>
+        <span className="hero-watermark">BPD</span>
       </section>
 
       <section className="login-panel">
@@ -72,7 +72,7 @@ export function LoginPage() {
             <span>BADGE ID</span>
             <div className="input-prefix">
               <b>ID</b>
-              <input value={badge} onChange={(event) => setBadge(event.target.value)} placeholder="E.G. RP-1047" autoComplete="username" maxLength={LIMITS.badge} required />
+              <input value={badge} onChange={(event) => setBadge(event.target.value)} placeholder="E.G. BPD-4821" autoComplete="username" maxLength={LIMITS.badge} required />
             </div>
           </label>
           <label className="field">
@@ -83,11 +83,15 @@ export function LoginPage() {
             </div>
           </label>
           {error && <p className="form-error">{error}</p>}
-          <button className="button login-submit" disabled={busy}>
+          <button className={`button login-submit ${busy ? 'is-busy' : ''}`} disabled={busy}>
             {busy ? 'VERIFYING…' : 'AUTHENTICATE SESSION'}<span>→</span>
           </button>
         </form>
-        {import.meta.env.DEV && <small className="demo-hint">DEV BUILD // DEMO LOGIN RP-1047 / demo1234</small>}
+        {import.meta.env.DEV && <small className="demo-hint">DEV BUILD // DEMO LOGINS BPD-1000 (CHIEF), 1001, 1047, 1102, 1200 / demo1234</small>}
+        <div className="access-links">
+          <Link to="/request-access">REQUEST ACCESS →</Link>
+          <Link to="/access-status">CHECK APPLICATION STATUS</Link>
+        </div>
         <div className="authorized-note">
           <b>AUTHORIZED PERSONNEL ONLY</b>
           <span>All access attempts, including failed ones, are logged and monitored.</span>

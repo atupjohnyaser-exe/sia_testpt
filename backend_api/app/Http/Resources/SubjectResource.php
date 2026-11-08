@@ -11,7 +11,7 @@ class SubjectResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $canSeeAdvisory = $request->user()?->hasClearance(Clearance::Officer) ?? false;
+        $canSeeAdvisory = $request->user()?->hasClearance(Clearance::Senior) ?? false;
 
         return [
             'id' => $this->id,
@@ -61,7 +61,7 @@ class SubjectResource extends JsonResource
         if ($this->photo_path) {
             return URL::temporarySignedRoute(
                 'subjects.photo',
-                now()->addMinutes((int) config('rockport.token_ttl_minutes')),
+                now()->addMinutes((int) config('bpd.token_ttl_minutes')),
                 ['subject' => $this->id]
             );
         }

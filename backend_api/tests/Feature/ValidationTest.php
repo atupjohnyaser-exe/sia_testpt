@@ -79,7 +79,7 @@ class ValidationTest extends TestCase
     public function test_login_input_is_limited(): void
     {
         $this->postJson('/api/v1/auth/login', ['badge_id' => 'bad badge!', 'access_key' => 'x'])->assertStatus(422)->assertJsonValidationErrors('badge_id');
-        $this->postJson('/api/v1/auth/login', ['badge_id' => 'RP-1047', 'access_key' => str_repeat('a', 129)])->assertStatus(422)->assertJsonValidationErrors('access_key');
+        $this->postJson('/api/v1/auth/login', ['badge_id' => 'BPD-1047', 'access_key' => str_repeat('a', 129)])->assertStatus(422)->assertJsonValidationErrors('access_key');
         $this->postJson('/api/v1/auth/login', ['badge_id' => str_repeat('A', 21), 'access_key' => 'x'])->assertStatus(422);
     }
 
@@ -167,7 +167,7 @@ class ValidationTest extends TestCase
 
     public function test_responses_carry_security_headers(): void
     {
-        $this->actingAsLevel(1);
+        $this->actingAsLevel(2);
 
         $this->getJson('/api/v1/subjects')
             ->assertOk()

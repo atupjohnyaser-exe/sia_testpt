@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthProvider.jsx'
 import { ToastProvider } from './context/ToastProvider.jsx'
+import { WarningProvider } from './context/WarningProvider.jsx'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -16,9 +17,11 @@ createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <WarningProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </WarningProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
